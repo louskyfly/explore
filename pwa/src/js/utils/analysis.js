@@ -109,8 +109,8 @@ export const analysis = {
 
     const edgeSim = this.compareEdges(edges1, edges2);
 
-    const score = Math.round(colorSim * 0.6 + edgeSim * 0.4);
-    const passed = score >= 50 && colorSim >= 40;
+    const score = Math.round(colorSim * 0.55 + edgeSim * 0.45);
+    const passed = score >= 35 && colorSim >= 30;
 
     return {
       score: Math.min(100, Math.max(0, score)),

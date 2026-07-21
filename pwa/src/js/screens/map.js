@@ -461,19 +461,42 @@ async function processMapPhoto(photoData, poi, route, resultDiv, scoreDiv) {
     return;
   }
 
-  scoreDiv.innerHTML = '<div style="text-align:center;padding:16px"><div class="splash-loader-bar" style="width:80px;margin:0 auto"></div><p style="margin-top:8px;color:var(--text-secondary);font-size:13px">Analyse IA en cours...</p></div>';
+  scoreDiv.innerHTML = '<div style="text-align:center;padding:16px"><div class="splash-loader-bar" style="width:80px;margin:0 auto"></div><p style="margin-top:8px;color:var(--text-secondary);font-size:13px">Comparaison avec le lieu...</p></div>';
 
   try {
-    const result = await analysis.detectObjectPresence(photoData, 'plaza');
-    const passed = result.passed;
+    let result;
+    if (poi.image) {
+      result = await analysis.comparePhotos(photoData, poi.image);
+    } else {
+      result = await analysis.detectObjectPresence(photoData, 'plaza');
+    }
+    const passed = result.passed !== undefined ? result.passed : result.score >= 50;
     const points = Math.round(50 * result.score / 100);
 
     scoreDiv.innerHTML = `
       <div class="photo-score">
         <div class="photo-score-value">${result.score}%</div>
-        <div class="photo-score-label">${passed ? (result.score >= 70 ? '🌟 Photo validée !' : '✅ Acceptée') : '🤔 À retenter — seuil non atteint'}</div>
+        <div class="photo-score-label">${passed ? (result.score >= 70 ? '🌟 Photo fidèle au lieu !' : '✅ Fidélité acceptable') : '🤔 Photo trop différente du lieu'}</div>
       </div>
-      <div style="padding:0 16px 16px;display:flex;gap:8px">
+      ${poi.image ? `
+        <div style="padding:0 16px 8px;display:flex;gap:8px;align-items:center">
+          <div style="flex:1;text-align:center">
+            <img src="${photoData}" style="width:100%;height:60px;object-fit:cover;border-radius:8px" alt="Votre photo">
+            <div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">Votre photo</div>
+          </div>
+          <div style="font-size:20px;color:var(--text-tertiary)">↔</div>
+          <div style="flex:1;text-align:center">
+            <img src="${poi.image}" style="width:100%;height:60px;object-fit:cover;border-radius:8px" alt="Référence" onerror="this.parentElement.innerHTML='<div style=\\'height:60px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary)\\'>📷 Réf.</div>'">
+            <div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">Référence</div>
+          </div>
+        </div>
+      ` : ''}
+      ${result.colorSimilarity !== undefined ? `
+        <div style="padding:0 16px;font-size:11px;color:var(--text-tertiary);text-align:center">
+          🎨 Couleurs: ${result.colorSimilarity}% · 📐 Structure: ${result.edgeSimilarity}%
+        </div>
+      ` : ''}
+      <div style="padding:4px 16px 16px;display:flex;gap:8px">
         <button class="btn btn-secondary" style="flex:1" id="btn-retake">🔄 Reprendre</button>
         ${passed ? `<button class="btn btn-primary" style="flex:1" id="btn-save-photo">✓ Valider (+${points} pts)</button>` : ''}
       </div>
