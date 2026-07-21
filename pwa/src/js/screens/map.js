@@ -363,19 +363,22 @@ function addMarker(poi, city, route = null) {
   const marker = L.marker([poi.lat, poi.lng], { icon }).addTo(map);
 
   const navigateUrl = `https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lng}&travelmode=walking`;
+  const imgHtml = poi.image ? `<img src="${poi.image}" alt="${poi.name}" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:120px;object-fit:cover;border-radius:8px 8px 0 0;margin:-4px -0px 0 -0px;display:block">` : '';
   const popupContent = `
-    <div class="map-popup" style="text-align:center;padding:4px 0">
-      <div class="map-popup-icon" style="background:${color}20;color:${color};margin:0 auto 6px">${poi.emoji || cat?.icon || '📍'}</div>
-      <div class="map-popup-name" style="font-size:14px;margin-bottom:2px">${poi.name}</div>
-      ${isCompleted ? '<div style="font-size:10px;color:var(--success);font-weight:600;margin-bottom:6px">✅ Complété</div>' : `<div style="margin-bottom:8px"></div>`}
-      <a href="${navigateUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-sm map-nav-btn" style="width:100%">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3,11 22,2 13,21 11,13 3,11"/></svg>
-        🧭 Naviguer
-      </a>
+    <div class="map-popup" style="text-align:center;padding:0;overflow:hidden;border-radius:10px">
+      ${imgHtml}
+      <div style="padding:8px 10px 10px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px">${poi.name}</div>
+        ${isCompleted ? '<div style="font-size:10px;color:var(--success);font-weight:600;margin-bottom:6px">✅ Complété</div>' : ''}
+        <a href="${navigateUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-sm map-nav-btn" style="width:100%">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3,11 22,2 13,21 11,13 3,11"/></svg>
+          🧭 Naviguer
+        </a>
+      </div>
     </div>
   `;
 
-  marker.bindPopup(popupContent, { maxWidth: 200, className: 'glass-popup' });
+  marker.bindPopup(popupContent, { maxWidth: 220, className: 'glass-popup' });
   marker.poiData = poi;
   markers.push(marker);
 }
