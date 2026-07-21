@@ -110,9 +110,11 @@ export const analysis = {
     const edgeSim = this.compareEdges(edges1, edges2);
 
     const score = Math.round(colorSim * 0.6 + edgeSim * 0.4);
+    const passed = score >= 50 && colorSim >= 40;
 
     return {
       score: Math.min(100, Math.max(0, score)),
+      passed,
       colorSimilarity: colorSim,
       edgeSimilarity: edgeSim,
       averageColor: this.getAverageColor(data1),
@@ -138,18 +140,23 @@ export const analysis = {
         Math.pow(b - target.b, 2)
       );
       totalPixels++;
-      if (dist < 60) matchCount++;
+      if (dist < 45) matchCount++;
       if (dist < bestMatch.distance) {
         bestMatch = { r, g, b, distance: dist };
       }
     }
 
     const percentage = Math.round((matchCount / totalPixels) * 100);
-    const score = Math.min(100, percentage * 3 + Math.max(0, 50 - bestMatch.distance));
+    const rawScore = percentage * 2.5 + Math.max(0, 40 - bestMatch.distance);
+    const score = Math.min(100, Math.round(rawScore));
+
+    const minPercentage = 12;
+    const passed = percentage >= minPercentage && score >= 50;
 
     return {
-      score: Math.round(score),
+      score,
       percentage,
+      passed,
       closestColor: bestMatch,
       targetColor: target
     };
@@ -198,23 +205,26 @@ export const analysis = {
 
     const obj = objects[objectName.toLowerCase()] || { expectedEdge: 0.15, expectedColors: [], label: objectName };
 
-    const edgeScore = Math.max(0, 100 - Math.abs(edgeDensity - obj.expectedEdge) * 500);
+    const edgeScore = Math.max(0, 100 - Math.abs(edgeDensity - obj.expectedEdge) * 600);
 
     let colorScore = 0;
     if (obj.expectedColors.length > 0) {
       const colorMatches = obj.expectedColors.filter(c => {
         const tc = this.parseColor(c);
-        return Math.sqrt(Math.pow(avg.r - tc.r, 2) + Math.pow(avg.g - tc.g, 2) + Math.pow(avg.b - tc.b, 2)) < 120;
+        return Math.sqrt(Math.pow(avg.r - tc.r, 2) + Math.pow(avg.g - tc.g, 2) + Math.pow(avg.b - tc.b, 2)) < 90;
       });
       colorScore = (colorMatches.length / obj.expectedColors.length) * 100;
     } else {
-      colorScore = 50;
+      colorScore = 40;
     }
 
-    const score = Math.round(edgeScore * 0.5 + colorScore * 0.5);
+    const rawScore = edgeScore * 0.5 + colorScore * 0.5;
+    const score = Math.round(rawScore);
+    const passed = score >= 55 && colorScore >= 40;
 
     return {
-      score: Math.round(score),
+      score,
+      passed,
       edgeScore: Math.round(edgeScore),
       colorScore: Math.round(colorScore),
       objectName: obj.label,

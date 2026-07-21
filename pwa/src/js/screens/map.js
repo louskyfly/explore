@@ -13,6 +13,15 @@ let activeCity = 'bilbao';
 let activeFilter = 'all';
 let activeRoute = null;
 let mapReady = false;
+let proximityWatchId = null;
+let lastProximityAlert = 0;
+let completedPoiIds = new Set();
+let photoNotificationInterval = null;
+let lastPhotoCount = 0;
+
+const PROXIMITY_RADIUS_KM = 3;
+const PROXIMITY_ALERT_RADIUS_M = 500;
+const PROXIMITY_COOLDOWN_MS = 60000;
 
 const allCategories = [
   { key: 'all', label: 'Tout', icon: '📍' },
@@ -28,6 +37,14 @@ const allCategories = [
 
 function getCity(id) { return cities.find(c => c.id === id); }
 
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function buildGoogleMapsRouteUrl(steps) {
   if (steps.length < 2) return '#';
   const origin = `${steps[0].lat},${steps[0].lng}`;
@@ -36,6 +53,11 @@ function buildGoogleMapsRouteUrl(steps) {
   let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=walking`;
   if (waypoints) url += `&waypoints=${encodeURIComponent(waypoints)}`;
   return url;
+}
+
+async function loadCompletedPois() {
+  const photos = await db.getAllPhotos();
+  completedPoiIds = new Set(photos.map(p => p.poiId).filter(Boolean));
 }
 
 export function renderMap(container) {
@@ -70,7 +92,9 @@ export function renderMap(container) {
     </div>
   `;
 
-  setTimeout(() => initMap(), 50);
+  loadCompletedPois().then(() => {
+    setTimeout(() => initMap(), 50);
+  });
 
   container.querySelectorAll('.city-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -95,6 +119,8 @@ export function renderMap(container) {
   document.getElementById('btn-locate')?.addEventListener('click', locateUser);
 
   renderRouteSelector();
+  startProximityWatch();
+  startPhotoNotifications();
 }
 
 function renderRouteSelector() {
@@ -274,14 +300,28 @@ async function fetchOSRMRoute(steps, color) {
 function addMarker(poi, city, route = null) {
   const cat = city.categories[poi.category];
   const color = cat?.color || '#173B7A';
+  const isCompleted = completedPoiIds.has(poi.id);
 
-  const markerHtml = poi.stepIndex !== undefined
-    ? `<div class="custom-marker-route" style="background:${color}">
-         <span class="marker-num">${poi.stepIndex + 1}</span>
-       </div>`
-    : `<div class="custom-marker" style="background:${color}">
-         <span>${poi.emoji || cat?.icon || '📍'}</span>
-       </div>`;
+  let markerHtml;
+  if (isCompleted) {
+    markerHtml = poi.stepIndex !== undefined
+      ? `<div class="custom-marker-route completed-marker" style="background:${color};opacity:0.45">
+           <span class="marker-num">${poi.stepIndex + 1}</span>
+           <div class="marker-check">✓</div>
+         </div>`
+      : `<div class="custom-marker completed-marker" style="background:${color};opacity:0.45">
+           <span>${poi.emoji || cat?.icon || '📍'}</span>
+           <div class="marker-check">✓</div>
+         </div>`;
+  } else {
+    markerHtml = poi.stepIndex !== undefined
+      ? `<div class="custom-marker-route" style="background:${color}">
+           <span class="marker-num">${poi.stepIndex + 1}</span>
+         </div>`
+      : `<div class="custom-marker" style="background:${color}">
+           <span>${poi.emoji || cat?.icon || '📍'}</span>
+         </div>`;
+  }
 
   const icon = L.divIcon({
     className: '',
@@ -298,6 +338,7 @@ function addMarker(poi, city, route = null) {
     <div class="map-popup">
       ${imgHtml}
       <div class="map-popup-body">
+        ${isCompleted ? '<div style="text-align:center;margin-bottom:8px"><span style="font-size:11px;font-weight:700;color:var(--success);background:rgba(48,209,88,0.12);padding:3px 10px;border-radius:8px">✅ Lieu complété</span></div>' : ''}
         <div class="map-popup-icon" style="background:${color}20;color:${color}">${poi.emoji || cat?.icon || '📍'}</div>
         <div class="map-popup-name">${poi.name}</div>
         <div class="map-popup-cat" style="background:${color}15;color:${color}">${cat?.label || poi.category}</div>
@@ -402,20 +443,39 @@ async function initCameraForPoi(poi, route) {
 async function processMapPhoto(photoData, poi, route, resultDiv, scoreDiv) {
   analysis.init();
   resultDiv.innerHTML = `<div class="photo-result"><img src="${photoData}" alt="Photo"></div>`;
-  scoreDiv.innerHTML = '<div style="text-align:center;padding:16px"><div class="splash-loader-bar" style="width:80px;margin:0 auto"></div><p style="margin-top:8px;color:var(--text-secondary);font-size:13px">Analyse en cours...</p></div>';
+  scoreDiv.innerHTML = '<div style="text-align:center;padding:16px"><div class="splash-loader-bar" style="width:80px;margin:0 auto"></div><p style="margin-top:8px;color:var(--text-secondary);font-size:13px">Vérification de la position...</p></div>';
+
+  const inRadius = await checkPhotoLocation(poi);
+  if (!inRadius) {
+    scoreDiv.innerHTML = `
+      <div style="text-align:center;padding:20px">
+        <div style="font-size:48px;margin-bottom:8px">📍</div>
+        <div style="font-size:15px;font-weight:700;color:var(--danger);margin-bottom:4px">Trop loin du lieu !</div>
+        <p style="font-size:13px;color:var(--text-secondary);line-height:1.4">Vous devez être à moins de ${PROXIMITY_RADIUS_KM} km de <strong>${poi.name}</strong> pour prendre une photo.</p>
+        <button class="btn btn-primary" style="margin-top:16px" id="btn-retry-location">🔄 Réessayer</button>
+      </div>
+    `;
+    document.getElementById('btn-retry-location')?.addEventListener('click', () => {
+      processMapPhoto(photoData, poi, route, resultDiv, scoreDiv);
+    });
+    return;
+  }
+
+  scoreDiv.innerHTML = '<div style="text-align:center;padding:16px"><div class="splash-loader-bar" style="width:80px;margin:0 auto"></div><p style="margin-top:8px;color:var(--text-secondary);font-size:13px">Analyse IA en cours...</p></div>';
 
   try {
     const result = await analysis.detectObjectPresence(photoData, 'plaza');
+    const passed = result.passed;
     const points = Math.round(50 * result.score / 100);
 
     scoreDiv.innerHTML = `
       <div class="photo-score">
         <div class="photo-score-value">${result.score}%</div>
-        <div class="photo-score-label">${result.score >= 70 ? '🌟 Photo validée !' : result.score >= 40 ? '👍 Pas mal !' : '🤔 À retenter'}</div>
+        <div class="photo-score-label">${passed ? (result.score >= 70 ? '🌟 Photo validée !' : '✅ Acceptée') : '🤔 À retenter — seuil non atteint'}</div>
       </div>
       <div style="padding:0 16px 16px;display:flex;gap:8px">
         <button class="btn btn-secondary" style="flex:1" id="btn-retake">🔄 Reprendre</button>
-        <button class="btn btn-primary" style="flex:1" id="btn-save-photo">✓ Valider</button>
+        ${passed ? `<button class="btn btn-primary" style="flex:1" id="btn-save-photo">✓ Valider (+${points} pts)</button>` : ''}
       </div>
     `;
 
@@ -447,13 +507,86 @@ async function processMapPhoto(photoData, poi, route, resultDiv, scoreDiv) {
         detail: `Score: ${result.score}% — +${points} pts`,
         timestamp: Date.now()
       });
-      showToast(`📸 Photo de "${poi.name}" sauvegardée !`, 'success');
+      completedPoiIds.add(poi.id);
+      showToast(`📸 Photo de "${poi.name}" sauvegardée ! +${points} pts`, 'success');
       document.querySelector('.modal-close')?.click();
+      updateMapMarkers();
     });
   } catch (err) {
     console.error(err);
     scoreDiv.innerHTML = `<div style="text-align:center;padding:16px;color:var(--danger)">Erreur lors de l'analyse</div>`;
   }
+}
+
+function checkPhotoLocation(poi) {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) return resolve(true);
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const dist = haversineDistance(pos.coords.latitude, pos.coords.longitude, poi.lat, poi.lng);
+        resolve(dist <= PROXIMITY_RADIUS_KM);
+      },
+      () => resolve(true),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  });
+}
+
+function startProximityWatch() {
+  if (proximityWatchId) return;
+  if (!navigator.geolocation) return;
+
+  proximityWatchId = navigator.geolocation.watchPosition(
+    pos => {
+      const { latitude, longitude } = pos.coords;
+      const now = Date.now();
+      if (now - lastProximityAlert < PROXIMITY_COOLDOWN_MS) return;
+
+      const city = getCity(activeCity);
+      if (!city) return;
+
+      for (const poi of city.pois) {
+        if (completedPoiIds.has(poi.id)) continue;
+        const dist = haversineDistance(latitude, longitude, poi.lat, poi.lng);
+        if (dist <= PROXIMITY_RADIUS_KM) {
+          const distM = Math.round(dist * 1000);
+          const cat = city.categories[poi.category];
+          showToast(`📍 Vous êtes à ${distM}m de "${poi.name}" ${cat?.icon || ''}`, 'info', 5000);
+          lastProximityAlert = now;
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(`📍 Proche de ${poi.name}`, {
+              body: `À ${distM}m — ${poi.description?.substring(0, 60) || 'Explorez ce lieu'}`,
+              icon: '/icons/icon-192.png'
+            });
+          }
+          break;
+        }
+      }
+    },
+    () => {},
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+  );
+}
+
+function startPhotoNotifications() {
+  if (photoNotificationInterval) return;
+  db.getAllPhotos().then(photos => { lastPhotoCount = photos.length; });
+  photoNotificationInterval = setInterval(async () => {
+    const photos = await db.getAllPhotos();
+    if (photos.length > lastPhotoCount) {
+      const newPhotos = photos.length - lastPhotoCount;
+      if (newPhotos > 0) {
+        showToast(`📸 ${newPhotos} nouvelle${newPhotos > 1 ? 's' : ''} photo${newPhotos > 1 ? 's' : ''} publiée${newPhotos > 1 ? 's' : ''} !`, 'info', 4000);
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('📸 Nouvelle photo !', {
+            body: `${newPhotos} photo${newPhotos > 1 ? 's' : ''} prise${newPhotos > 1 ? 's' : ''} par un autre explorateur`,
+            icon: '/icons/icon-192.png'
+          });
+        }
+      }
+      lastPhotoCount = photos.length;
+    }
+  }, 15000);
 }
 
 function locateUser() {
