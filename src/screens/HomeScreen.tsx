@@ -9,6 +9,7 @@ import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 import { useActivities } from '../contexts/ActivityContext';
+import { useProfile } from '../contexts/ProfileContext';
 import { GlassCard } from '../components/GlassCard';
 import { CategoryBadge } from '../components/CategoryBadge';
 import { StatusBadge } from '../components/StatusBadge';
@@ -23,6 +24,7 @@ const { width } = Dimensions.get('window');
 export function HomeScreen() {
   const { theme, isDark } = useTheme();
   const { filtered, loading, filters, setFilters, refresh, toggleFavorite } = useActivities();
+  const { currentProfile, logout, getProfileInfo } = useProfile();
   const navigation = useNavigation<any>();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -161,7 +163,17 @@ export function HomeScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <View style={[styles.header, { backgroundColor: theme.glassBlur, borderBottomColor: theme.separator }]}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Explore</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Explore</Text>
+          <Pressable
+            onPress={logout}
+            style={[styles.profileBadge, { backgroundColor: (getProfileInfo()?.color || theme.accent) + '20' }]}
+          >
+            <Text style={[styles.profileBadgeText, { color: getProfileInfo()?.color || theme.accent }]}>
+              {getProfileInfo()?.label || ''}
+            </Text>
+          </Pressable>
+        </View>
         <View style={styles.headerActions}>
           <Pressable onPress={() => navigation.navigate('Map')} style={[styles.headerBtn, { backgroundColor: theme.glassHighlight }]}>
             <MaterialIcons name="map" size={20} color={theme.accent} />
@@ -447,5 +459,14 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  profileBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  profileBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

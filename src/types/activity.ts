@@ -1,3 +1,14 @@
+export type Profile = 'papa' | 'maman';
+
+export const PROFILES: { key: Profile; label: string; icon: string; color: string; pin: string }[] = [
+  { key: 'papa', label: 'Papa', icon: 'person', color: '#42A5F5', pin: '0212' },
+  { key: 'maman', label: 'Maman', icon: 'person', color: '#EC407A', pin: '1412' },
+];
+
+export function getProfileInfo(p: Profile) {
+  return PROFILES.find(pr => pr.key === p) || PROFILES[0];
+}
+
 export type Category =
   | 'restaurant'
   | 'parc_attractions'
@@ -27,6 +38,7 @@ export interface Photo {
 
 export interface Activity {
   id: string;
+  profile: Profile;
   title: string;
   description: string;
   photos: Photo[];

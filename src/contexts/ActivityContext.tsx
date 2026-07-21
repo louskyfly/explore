@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { Activity, Category, Priority, Status } from '../types/activity';
+import { Activity, Category, Priority, Status, Profile } from '../types/activity';
 import * as DB from '../services/database';
+import { useProfile } from './ProfileContext';
 
 interface Filters {
   search: string;
@@ -42,6 +43,7 @@ const ActivityContext = createContext<ActivityContextType>({
 });
 
 export function ActivityProvider({ children }: { children: React.ReactNode }) {
+  const { currentProfile } = useProfile();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFiltersState] = useState<Filters>({
@@ -49,12 +51,24 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
   });
 
   const refresh = useCallback(async () => {
-    const all = await DB.getAllActivities();
+    if (!currentProfile) {
+      setActivities([]);
+      setLoading(false);
+      return;
+    }
+    const all = await DB.getAllActivities(currentProfile);
     setActivities(all);
     setLoading(false);
-  }, []);
+  }, [currentProfile]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    setActivities([]);
+    setLoading(true);
+  }, [currentProfile]);
 
   const filtered = activities.filter(a => {
     if (filters.search) {
@@ -73,9 +87,11 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addActivity = useCallback(async (a: Activity) => {
+    if (!currentProfile) return;
+    a.profile = currentProfile;
     await DB.insertActivity(a);
     await refresh();
-  }, [refresh]);
+  }, [refresh, currentProfile]);
 
   const updateActivity = useCallback(async (a: Activity) => {
     await DB.updateActivity(a);
@@ -106,10 +122,12 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
   const duplicateActivity = useCallback(async (id: string) => {
     const a = activities.find(act => act.id === id);
     if (!a) return;
+    if (!currentProfile) return;
     const now = new Date().toISOString();
     const dup: Activity = {
       ...a,
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      profile: currentProfile,
       title: `${a.title} (copie)`,
       isFavorite: false,
       isArchived: false,
@@ -119,7 +137,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     };
     await DB.insertActivity(dup);
     await refresh();
-  }, [activities, refresh]);
+  }, [activities, refresh, currentProfile]);
 
   const reorderActivities = useCallback(async (ids: string[]) => {
     const updates = ids.map((id, i) => {

@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useActivities } from '../contexts/ActivityContext';
+import { useProfile } from '../contexts/ProfileContext';
 import {
   Activity, Category, Priority, Status, Photo,
   CATEGORIES, PRIORITIES, STATUSES, getCategoryInfo,
@@ -17,6 +18,7 @@ import {
 export function CreateActivityScreen() {
   const { theme } = useTheme();
   const { addActivity, updateActivity } = useActivities();
+  const { currentProfile } = useProfile();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const editId = route.params?.activityId as string | undefined;
@@ -120,6 +122,7 @@ export function CreateActivityScreen() {
     const now = new Date().toISOString();
     const activity: Activity = {
       id: editId || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      profile: existing?.profile || currentProfile || 'papa',
       title: title.trim(),
       description: description.trim(),
       photos,

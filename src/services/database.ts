@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { Activity } from '../types/activity';
+import { Activity, Profile } from '../types/activity';
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -7,9 +7,18 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (db) return db;
   db = await SQLite.openDatabaseAsync('explore.db');
   await db.execAsync(`PRAGMA journal_mode = WAL;`);
+
+  const tableInfo = await db.getAllAsync<any>("PRAGMA table_info(activities)");
+  const hasProfile = tableInfo.some((col: any) => col.name === 'profile');
+
+  if (!hasProfile) {
+    await db.execAsync(`ALTER TABLE activities ADD COLUMN profile TEXT DEFAULT 'papa';`);
+  }
+
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS activities (
       id TEXT PRIMARY KEY NOT NULL,
+      profile TEXT DEFAULT 'papa',
       title TEXT NOT NULL,
       description TEXT DEFAULT '',
       photos TEXT DEFAULT '[]',
@@ -36,18 +45,20 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   return db;
 }
 
-export async function getAllActivities(): Promise<Activity[]> {
+export async function getAllActivities(profile: Profile): Promise<Activity[]> {
   const database = await getDatabase();
   const rows = await database.getAllAsync<any>(
-    'SELECT * FROM activities WHERE isArchived = 0 ORDER BY "order" ASC, createdAt DESC'
+    'SELECT * FROM activities WHERE isArchived = 0 AND profile = ? ORDER BY "order" ASC, createdAt DESC',
+    profile
   );
   return rows.map(rowToActivity);
 }
 
-export async function getArchivedActivities(): Promise<Activity[]> {
+export async function getArchivedActivities(profile: Profile): Promise<Activity[]> {
   const database = await getDatabase();
   const rows = await database.getAllAsync<any>(
-    'SELECT * FROM activities WHERE isArchived = 1 ORDER BY updatedAt DESC'
+    'SELECT * FROM activities WHERE isArchived = 1 AND profile = ? ORDER BY updatedAt DESC',
+    profile
   );
   return rows.map(rowToActivity);
 }
@@ -61,11 +72,11 @@ export async function getActivity(id: string): Promise<Activity | null> {
 export async function insertActivity(activity: Activity): Promise<void> {
   const database = await getDatabase();
   await database.runAsync(
-    `INSERT INTO activities (id, title, description, photos, category, placeName, city, country,
+    `INSERT INTO activities (id, profile, title, description, photos, category, placeName, city, country,
       latitude, longitude, priority, status, plannedDate, notes, link, budget, estimatedTime,
       isFavorite, isArchived, createdAt, updatedAt, "order")
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    activity.id, activity.title, activity.description, JSON.stringify(activity.photos),
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    activity.id, activity.profile, activity.title, activity.description, JSON.stringify(activity.photos),
     activity.category, activity.placeName, activity.city, activity.country,
     activity.latitude ?? null, activity.longitude ?? null, activity.priority, activity.status,
     activity.plannedDate ?? null, activity.notes, activity.link ?? null,
@@ -78,11 +89,11 @@ export async function insertActivity(activity: Activity): Promise<void> {
 export async function updateActivity(activity: Activity): Promise<void> {
   const database = await getDatabase();
   await database.runAsync(
-    `UPDATE activities SET title=?, description=?, photos=?, category=?, placeName=?, city=?, country=?,
+    `UPDATE activities SET profile=?, title=?, description=?, photos=?, category=?, placeName=?, city=?, country=?,
       latitude=?, longitude=?, priority=?, status=?, plannedDate=?, notes=?, link=?, budget=?,
       estimatedTime=?, isFavorite=?, isArchived=?, updatedAt=?, "order"=?
     WHERE id=?`,
-    activity.title, activity.description, JSON.stringify(activity.photos),
+    activity.profile, activity.title, activity.description, JSON.stringify(activity.photos),
     activity.category, activity.placeName, activity.city, activity.country,
     activity.latitude ?? null, activity.longitude ?? null, activity.priority, activity.status,
     activity.plannedDate ?? null, activity.notes, activity.link ?? null,
@@ -100,6 +111,7 @@ export async function deleteActivity(id: string): Promise<void> {
 function rowToActivity(row: any): Activity {
   return {
     id: row.id,
+    profile: row.profile || 'papa',
     title: row.title,
     description: row.description || '',
     photos: JSON.parse(row.photos || '[]'),
