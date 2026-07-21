@@ -7,6 +7,7 @@ import { analysis } from '../utils/analysis.js';
 const cities = [bilbao, zaragoza];
 let map = null;
 let markers = [];
+let utilityMarkers = [];
 let polylines = [];
 let userMarker = null;
 let activeCity = 'bilbao';
@@ -194,8 +195,10 @@ function updateMapMarkers() {
   if (!map) return;
 
   markers.forEach(m => map.removeLayer(m));
+  utilityMarkers.forEach(m => map.removeLayer(m));
   polylines.forEach(p => map.removeLayer(p));
   markers = [];
+  utilityMarkers = [];
   polylines = [];
 
   const city = getCity(activeCity);
@@ -214,6 +217,32 @@ function updateMapMarkers() {
       map.fitBounds(bounds, { padding: [60, 60] });
     }
   }
+
+  if (city.utility) renderUtilityMarkers(city);
+}
+
+function renderUtilityMarkers(city) {
+  city.utility.forEach(u => {
+    const isToilet = u.type === 'toilet';
+    const size = 24;
+    const bg = isToilet ? 'rgba(120,120,140,0.55)' : 'rgba(60,160,220,0.55)';
+    const html = `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:13px;backdrop-filter:blur(8px);border:1.5px solid rgba(255,255,255,0.25);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)">${u.emoji}</div>`;
+    const icon = L.divIcon({ className: '', html, iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+    const marker = L.marker([u.lat, u.lng], { icon }).addTo(map);
+    const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${u.lat},${u.lng}&travelmode=walking`;
+    const popup = `
+      <div class="map-popup" style="text-align:center;padding:4px 0">
+        <div style="font-size:20px;margin-bottom:4px">${u.emoji}</div>
+        <div class="map-popup-name" style="font-size:13px;margin-bottom:6px">${u.name}</div>
+        <a href="${navUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-sm map-nav-btn" style="width:100%">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3,11 22,2 13,21 11,13 3,11"/></svg>
+          🧭 Naviguer
+        </a>
+      </div>
+    `;
+    marker.bindPopup(popup, { maxWidth: 180, className: 'glass-popup' });
+    utilityMarkers.push(marker);
+  });
 }
 
 function renderRouteOnMap(route, city) {
@@ -231,6 +260,7 @@ function renderRouteOnMap(route, city) {
   }));
 
   steps.forEach(step => addMarker(step, city, route));
+  if (city.utility) renderUtilityMarkers(city);
 
   const mapsUrl = buildGoogleMapsRouteUrl(steps);
 
@@ -333,42 +363,21 @@ function addMarker(poi, city, route = null) {
   const marker = L.marker([poi.lat, poi.lng], { icon }).addTo(map);
 
   const navigateUrl = `https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lng}&travelmode=walking`;
-  const imgHtml = poi.image ? `<img class="map-popup-img" src="${poi.image}" alt="${poi.name}" loading="lazy" onerror="this.style.display='none'">` : '';
   const popupContent = `
-    <div class="map-popup">
-      ${imgHtml}
-      <div class="map-popup-body">
-        ${isCompleted ? '<div style="text-align:center;margin-bottom:8px"><span style="font-size:11px;font-weight:700;color:var(--success);background:rgba(48,209,88,0.12);padding:3px 10px;border-radius:8px">✅ Lieu complété</span></div>' : ''}
-        <div class="map-popup-icon" style="background:${color}20;color:${color}">${poi.emoji || cat?.icon || '📍'}</div>
-        <div class="map-popup-name">${poi.name}</div>
-        <div class="map-popup-cat" style="background:${color}15;color:${color}">${cat?.label || poi.category}</div>
-        <p class="map-popup-desc">${poi.description || ''}</p>
-        <div class="map-popup-actions">
-          <a href="${navigateUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-sm map-nav-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3,11 22,2 13,21 11,13 3,11"/></svg>
-            Naviguer
-          </a>
-          <button class="btn btn-sm map-photo-btn" data-poi-id="${poi.id}" data-route-id="${poi.routeId || ''}" data-poi-name="${poi.name}">
-            📸 Photo
-          </button>
-        </div>
-      </div>
+    <div class="map-popup" style="text-align:center;padding:4px 0">
+      <div class="map-popup-icon" style="background:${color}20;color:${color};margin:0 auto 6px">${poi.emoji || cat?.icon || '📍'}</div>
+      <div class="map-popup-name" style="font-size:14px;margin-bottom:2px">${poi.name}</div>
+      ${isCompleted ? '<div style="font-size:10px;color:var(--success);font-weight:600;margin-bottom:6px">✅ Complété</div>' : `<div style="margin-bottom:8px"></div>`}
+      <a href="${navigateUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-sm map-nav-btn" style="width:100%">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3,11 22,2 13,21 11,13 3,11"/></svg>
+        🧭 Naviguer
+      </a>
     </div>
   `;
 
-  marker.bindPopup(popupContent, { maxWidth: 260, className: 'glass-popup' });
+  marker.bindPopup(popupContent, { maxWidth: 200, className: 'glass-popup' });
   marker.poiData = poi;
   markers.push(marker);
-
-  marker.on('popupopen', () => {
-    const photoBtn = document.querySelector(`.map-photo-btn[data-poi-id="${poi.id}"]`);
-    if (photoBtn) {
-      photoBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        startMapPhoto(poi, route);
-      });
-    }
-  });
 }
 
 function startMapPhoto(poi, route) {
