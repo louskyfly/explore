@@ -8,13 +8,6 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   db = await SQLite.openDatabaseAsync('explore.db');
   await db.execAsync(`PRAGMA journal_mode = WAL;`);
 
-  const tableInfo = await db.getAllAsync<any>("PRAGMA table_info(activities)");
-  const hasProfile = tableInfo.some((col: any) => col.name === 'profile');
-
-  if (!hasProfile) {
-    await db.execAsync(`ALTER TABLE activities ADD COLUMN profile TEXT DEFAULT 'papa';`);
-  }
-
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS activities (
       id TEXT PRIMARY KEY NOT NULL,
@@ -42,6 +35,15 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
       "order" INTEGER DEFAULT 0
     );
   `);
+
+  try {
+    const tableInfo = await db.getAllAsync<any>("PRAGMA table_info(activities)");
+    const hasProfile = tableInfo.some((col: any) => col.name === 'profile');
+    if (!hasProfile) {
+      await db.execAsync(`ALTER TABLE activities ADD COLUMN profile TEXT DEFAULT 'papa';`);
+    }
+  } catch {}
+
   return db;
 }
 
