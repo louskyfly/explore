@@ -162,49 +162,82 @@ export function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      <View style={[styles.header, { backgroundColor: theme.glassBlur, borderBottomColor: theme.separator }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Explore</Text>
-          <Pressable
-            onPress={logout}
-            style={[styles.profileBadge, { backgroundColor: (getProfileInfo()?.color || theme.accent) + '20' }]}
-          >
-            <Text style={[styles.profileBadgeText, { color: getProfileInfo()?.color || theme.accent }]}>
-              {getProfileInfo()?.label || ''}
-            </Text>
-          </Pressable>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable onPress={() => navigation.navigate('Map')} style={[styles.headerBtn, { backgroundColor: theme.glassHighlight }]}>
-            <MaterialIcons name="map" size={20} color={theme.accent} />
-          </Pressable>
-          <Pressable onPress={() => navigation.navigate('Stats')} style={[styles.headerBtn, { backgroundColor: theme.glassHighlight }]}>
-            <MaterialIcons name="bar-chart" size={20} color={theme.accent} />
-          </Pressable>
-          <Pressable onPress={() => navigation.navigate('Settings')} style={[styles.headerBtn, { backgroundColor: theme.glassHighlight }]}>
-            <MaterialIcons name="settings" size={20} color={theme.accent} />
-          </Pressable>
+      {/* Glass Header */}
+      <View style={styles.headerWrap}>
+        <LinearGradient
+          colors={isDark
+            ? ['rgba(30,30,32,0.55)', 'rgba(30,30,32,0.35)']
+            : ['rgba(255,255,255,0.5)', 'rgba(255,255,255,0.25)']
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.headerBg}
+        />
+        {/* Prismatic bottom edge */}
+        <LinearGradient
+          colors={isDark
+            ? ['rgba(140,170,255,0.12)', 'rgba(200,180,255,0.06)', 'transparent']
+            : ['rgba(180,210,255,0.25)', 'rgba(220,200,255,0.12)', 'transparent']
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.headerPrism}
+        />
+        <View style={styles.header}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Explore</Text>
+            <Pressable
+              onPress={logout}
+              style={[styles.profileBadge, { backgroundColor: (getProfileInfo()?.color || theme.accent) + '18' }]}
+            >
+              <Text style={[styles.profileBadgeText, { color: getProfileInfo()?.color || theme.accent }]}>
+                {getProfileInfo()?.label || ''}
+              </Text>
+            </Pressable>
+          </View>
+          <View style={styles.headerActions}>
+            <Pressable onPress={() => navigation.navigate('Map')} style={[styles.headerBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.45)' }]}>
+              <MaterialIcons name="map" size={20} color={theme.accent} />
+            </Pressable>
+            <Pressable onPress={() => navigation.navigate('Stats')} style={[styles.headerBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.45)' }]}>
+              <MaterialIcons name="bar-chart" size={20} color={theme.accent} />
+            </Pressable>
+            <Pressable onPress={() => navigation.navigate('Settings')} style={[styles.headerBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.45)' }]}>
+              <MaterialIcons name="settings" size={20} color={theme.accent} />
+            </Pressable>
+          </View>
         </View>
       </View>
 
-      <View style={[styles.searchContainer, {
-        backgroundColor: theme.glassBg,
-        borderColor: theme.glassBorder,
-        borderWidth: 1,
-      }]}>
-        <MaterialIcons name="search" size={18} color={theme.textSecondary} />
-        <TextInput
-          style={[styles.searchInput, { color: theme.text }]}
-          placeholder="Rechercher..."
-          placeholderTextColor={theme.textTertiary}
-          value={filters.search}
-          onChangeText={s => setFilters({ search: s })}
+      {/* Glass Search Bar */}
+      <View style={styles.searchWrap}>
+        <LinearGradient
+          colors={isDark
+            ? ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.03)']
+            : ['rgba(255,255,255,0.65)', 'rgba(255,255,255,0.2)']
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.searchBg}
         />
-        {filters.search.length > 0 && (
-          <Pressable onPress={() => setFilters({ search: '' })}>
-            <MaterialIcons name="close" size={18} color={theme.textSecondary} />
-          </Pressable>
-        )}
+        <View style={[styles.searchContainer, {
+          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.55)',
+          borderWidth: 1,
+        }]}>
+          <MaterialIcons name="search" size={18} color={theme.textSecondary} />
+          <TextInput
+            style={[styles.searchInput, { color: theme.text }]}
+            placeholder="Rechercher..."
+            placeholderTextColor={theme.textTertiary}
+            value={filters.search}
+            onChangeText={s => setFilters({ search: s })}
+          />
+          {filters.search.length > 0 && (
+            <Pressable onPress={() => setFilters({ search: '' })}>
+              <MaterialIcons name="close" size={18} color={theme.textSecondary} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <View style={styles.filterRow}>
@@ -214,8 +247,8 @@ export function HomeScreen() {
             style={[
               styles.filterChip,
               {
-                backgroundColor: showFilters ? theme.accent + '20' : theme.glassBg,
-                borderColor: showFilters ? theme.accent : theme.glassBorder,
+                backgroundColor: showFilters ? theme.accent + '18' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.4)'),
+                borderColor: showFilters ? theme.accent + '60' : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.5)'),
                 borderWidth: 1,
               },
             ]}
@@ -232,8 +265,8 @@ export function HomeScreen() {
               style={[
                 styles.filterChip,
                 {
-                  backgroundColor: filters.category === c.key ? c.color + '20' : theme.glassBg,
-                  borderColor: filters.category === c.key ? c.color : theme.glassBorder,
+                  backgroundColor: filters.category === c.key ? c.color + '18' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.4)'),
+                  borderColor: filters.category === c.key ? c.color + '60' : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.5)'),
                   borderWidth: 1,
                 },
               ]}
@@ -250,7 +283,7 @@ export function HomeScreen() {
               key={vm.mode}
               onPress={() => setViewMode(vm.mode)}
               style={[styles.viewModeBtn, {
-                backgroundColor: viewMode === vm.mode ? theme.accent + '20' : 'transparent',
+                backgroundColor: viewMode === vm.mode ? theme.accent + '18' : 'transparent',
               }]}
             >
               <MaterialIcons
@@ -264,7 +297,10 @@ export function HomeScreen() {
       </View>
 
       {showFilters && (
-        <View style={[styles.extraFilters, { backgroundColor: theme.glassBg, borderBottomColor: theme.separator }]}>
+        <View style={[styles.extraFilters, {
+          backgroundColor: isDark ? 'rgba(30,30,32,0.45)' : 'rgba(255,255,255,0.35)',
+          borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.4)',
+        }]}>
           <Text style={[styles.filterSectionTitle, { color: theme.textSecondary }]}>Statut</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
             {STATUSES.map(s => (
@@ -274,8 +310,8 @@ export function HomeScreen() {
                 style={[
                   styles.filterChip,
                   {
-                    backgroundColor: filters.status === s.key ? s.color + '20' : theme.glassBg,
-                    borderColor: filters.status === s.key ? s.color : theme.glassBorder,
+                    backgroundColor: filters.status === s.key ? s.color + '18' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.4)'),
+                    borderColor: filters.status === s.key ? s.color + '60' : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.5)'),
                     borderWidth: 1,
                   },
                 ]}
@@ -295,8 +331,8 @@ export function HomeScreen() {
                 style={[
                   styles.filterChip,
                   {
-                    backgroundColor: filters.priority === p.key ? p.color + '20' : theme.glassBg,
-                    borderColor: filters.priority === p.key ? p.color : theme.glassBorder,
+                    backgroundColor: filters.priority === p.key ? p.color + '18' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.4)'),
+                    borderColor: filters.priority === p.key ? p.color + '60' : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.5)'),
                     borderWidth: 1,
                   },
                 ]}
@@ -353,13 +389,28 @@ export function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerWrap: {
+    position: 'relative',
+    overflow: 'hidden',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  headerBg: {
+    ...StyleSheet.absoluteFill,
+  },
+  headerPrism: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 1.5,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerTitle: { fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
   headerActions: { flexDirection: 'row', gap: 6 },
@@ -370,14 +421,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  searchWrap: {
+    position: 'relative',
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  searchBg: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 16,
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 16,
   },
   searchInput: { flex: 1, marginLeft: 8, fontSize: 16 },
   filterRow: { marginTop: 12 },
