@@ -119,39 +119,43 @@ export function CreateActivityScreen() {
       Alert.alert('Erreur', 'Le titre est requis.');
       return;
     }
-    const now = new Date().toISOString();
-    const activity: Activity = {
-      id: editId || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-      profile: existing?.profile || currentProfile || 'papa',
-      title: title.trim(),
-      description: description.trim(),
-      photos,
-      category,
-      placeName: placeName.trim(),
-      city: city.trim(),
-      country: country.trim(),
-      latitude,
-      longitude,
-      priority,
-      status,
-      plannedDate: plannedDate.trim() || undefined,
-      notes: notes.trim(),
-      link: link.trim() || undefined,
-      budget: budget ? parseFloat(budget) : undefined,
-      estimatedTime: estimatedTime.trim() || undefined,
-      isFavorite: existing?.isFavorite || false,
-      isArchived: existing?.isArchived || false,
-      createdAt: existing?.createdAt || now,
-      updatedAt: now,
-      order: existing?.order || 0,
-    };
+    try {
+      const now = new Date().toISOString();
+      const activity: Activity = {
+        id: editId || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        profile: existing?.profile || currentProfile || 'papa',
+        title: title.trim(),
+        description: description.trim(),
+        photos,
+        category,
+        placeName: placeName.trim(),
+        city: city.trim(),
+        country: country.trim(),
+        latitude,
+        longitude,
+        priority,
+        status,
+        plannedDate: plannedDate.trim() || undefined,
+        notes: notes.trim(),
+        link: link.trim() || undefined,
+        budget: budget ? parseFloat(budget) : undefined,
+        estimatedTime: estimatedTime.trim() || undefined,
+        isFavorite: existing?.isFavorite || false,
+        isArchived: existing?.isArchived || false,
+        createdAt: existing?.createdAt || now,
+        updatedAt: now,
+        order: existing?.order || 0,
+      };
 
-    if (editId) {
-      await updateActivity(activity);
-    } else {
-      await addActivity(activity);
+      if (editId) {
+        await updateActivity(activity);
+      } else {
+        await addActivity(activity);
+      }
+      navigation.goBack();
+    } catch (e: any) {
+      Alert.alert('Erreur de sauvegarde', e?.message || 'Une erreur est survenue.');
     }
-    navigation.goBack();
   };
 
   const inputStyle = [styles.input, { backgroundColor: theme.searchBackground, color: theme.text }];
