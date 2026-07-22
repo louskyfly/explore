@@ -363,7 +363,8 @@ function addMarker(poi, city, route = null) {
   const marker = L.marker([poi.lat, poi.lng], { icon }).addTo(map);
 
   const navigateUrl = `https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lng}&travelmode=walking`;
-  const imgHtml = poi.image ? `<img src="${poi.image}" alt="${poi.name}" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:120px;object-fit:cover;border-radius:8px 8px 0 0;margin:-4px -0px 0 -0px;display:block">` : '';
+  const imgFallback = `this.style.background='linear-gradient(135deg,var(--accent),var(--accent-light))';this.style.display='flex';this.style.alignItems='center';this.style.justifyContent='center';this.style.fontSize='28px';this.alt='${poi.emoji}';this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1 1%22><text y=%22.9%22 x=%220.1%22 font-size=%220.8%22>${poi.emoji}</text></svg>'`;
+  const imgHtml = poi.image ? `<img src="${poi.image}" alt="${poi.name}" crossorigin="anonymous" referrerpolicy="no-referrer" loading="lazy" onerror="${imgFallback}" style="width:100%;height:120px;object-fit:cover;border-radius:8px 8px 0 0;margin:-4px -0px 0 -0px;display:block;background:var(--card-bg);">` : '';
   const popupContent = `
     <div class="map-popup" style="text-align:center;padding:0;overflow:hidden;border-radius:10px">
       ${imgHtml}
@@ -498,7 +499,7 @@ async function processMapPhoto(photoData, poi, route, resultDiv, scoreDiv) {
           </div>
           <div style="font-size:20px;color:var(--text-tertiary)">↔</div>
           <div style="flex:1;text-align:center">
-            <img src="${poi.image}" style="width:100%;height:60px;object-fit:cover;border-radius:8px" alt="Référence" onerror="this.parentElement.innerHTML='<div style=\\'height:60px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary)\\'>📷 Réf.</div>'">
+            <img src="${poi.image}" crossorigin="anonymous" referrerpolicy="no-referrer" style="width:100%;height:60px;object-fit:cover;border-radius:8px;background:var(--card-bg)" alt="Référence" onerror="this.style.background='linear-gradient(135deg,var(--accent),var(--accent-light))';this.style.display='flex';this.style.alignItems='center';this.style.justifyContent='center'">>
             <div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">Référence</div>
           </div>
         </div>
