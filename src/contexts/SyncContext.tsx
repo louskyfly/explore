@@ -2,28 +2,30 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { useProfile } from './ProfileContext';
 import { useActivities } from './ActivityContext';
 import { Activity, Profile } from '../types/activity';
-import { addToQueue, getPendingQueue, processQueue } from '../services/syncQueue';
 import * as Sync from '../services/syncService';
 import * as DB from '../services/database';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SyncContextType {
   isOnline: boolean;
   isSyncing: boolean;
   lastSync: string | null;
-  pendingCount: number;
   syncNow: () => Promise<void>;
   enabled: boolean;
   setEnabled: (v: boolean) => void;
+  token: string | null;
+  setToken: (t: string) => Promise<void>;
 }
 
 const SyncContext = createContext<SyncContextType>({
   isOnline: false,
   isSyncing: false,
   lastSync: null,
-  pendingCount: 0,
   syncNow: async () => {},
   enabled: false,
   setEnabled: () => {},
+  token: null,
+  setToken: async () => {},
 });
 
 export function SyncProvider({ children }: { children: React.ReactNode }) {
@@ -32,32 +34,35 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   const [isOnline, setIsOnline] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
-  const [pendingCount, setPendingCount] = useState(0);
   const [enabled, setEnabledState] = useState(false);
+  const [token, setTokenState] = useState<string | null>(null);
 
   useEffect(() => {
-    getPendingQueue().then(q => setPendingCount(q.length)).catch(() => {});
+    Sync.getToken().then(t => {
+      if (t) {
+        setTokenState(t);
+        setEnabledState(true);
+      }
+    }).catch(() => {});
+    Sync.getGistId().catch(() => {});
   }, []);
 
   useEffect(() => {
-    try {
-      setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
-    } catch {
-      setIsOnline(true);
-    }
+    try { setIsOnline(navigator.onLine); } catch { setIsOnline(true); }
+  }, []);
+
+  const setToken = useCallback(async (t: string) => {
+    await Sync.setToken(t);
+    setTokenState(t);
   }, []);
 
   const syncNow = useCallback(async () => {
-    if (!enabled || isSyncing || !currentProfile) return;
+    if (!enabled || isSyncing || !currentProfile || !token) return;
     setIsSyncing(true);
     try {
-      await processQueue(
-        async (a) => await Sync.pushActivity(a),
-        async (id) => await Sync.removeActivity(id),
-        async (id) => getLocalActivity(id),
-      );
+      await Sync.pushToGist(activities);
 
-      const remoteActivities = await Sync.pullActivities(currentProfile);
+      const remoteActivities = await Sync.pullFromGist(currentProfile);
       const localMap = new Map(activities.map(a => [a.id, a]));
       const remoteMap = new Map(remoteActivities.map(a => [a.id, a]));
 
@@ -72,30 +77,28 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
       for (const [id, local] of localMap) {
         if (!remoteMap.has(id)) {
-          await Sync.pushActivity(local);
+          await Sync.pushToGist([local]);
         }
       }
 
       await refresh();
-      const queue = await getPendingQueue();
-      setPendingCount(queue.length);
       setLastSync(new Date().toISOString());
-    } catch (e) {
-      console.log('Sync error:', e);
+    } catch (e: any) {
+      console.log('Sync error:', e?.message);
     } finally {
       setIsSyncing(false);
     }
-  }, [enabled, isSyncing, currentProfile, refresh, activities, getLocalActivity]);
+  }, [enabled, isSyncing, currentProfile, refresh, activities, token]);
 
   const setEnabled = useCallback((v: boolean) => {
     setEnabledState(v);
-    if (v) syncNow();
-  }, [syncNow]);
+    if (v && token) syncNow();
+  }, [syncNow, token]);
 
   return (
     <SyncContext.Provider value={{
-      isOnline, isSyncing, lastSync, pendingCount,
-      syncNow, enabled, setEnabled,
+      isOnline, isSyncing, lastSync,
+      syncNow, enabled, setEnabled, token, setToken,
     }}>
       {children}
     </SyncContext.Provider>

@@ -26,7 +26,7 @@ export function HomeScreen() {
   const { theme, isDark } = useTheme();
   const { filtered, loading, filters, setFilters, refresh, toggleFavorite } = useActivities();
   const { currentProfile, logout, getProfileInfo } = useProfile();
-  const { isSyncing, pendingCount, enabled, setEnabled, syncNow } = useSync();
+  const { isSyncing, enabled, setEnabled, syncNow } = useSync();
   const navigation = useNavigation<any>();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -211,11 +211,6 @@ export function HomeScreen() {
                 size={20}
                 color={enabled ? (isSyncing ? theme.accent : theme.success) : theme.textTertiary}
               />
-              {pendingCount > 0 && (
-                <View style={[styles.syncBadge, { backgroundColor: theme.destructive }]}>
-                  <Text style={styles.syncBadgeText}>{pendingCount > 9 ? '9+' : pendingCount}</Text>
-                </View>
-              )}
             </Pressable>
             <Pressable onPress={() => navigation.navigate('Map')} style={[styles.headerBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.45)' }]}>
               <MaterialIcons name="map" size={20} color={theme.accent} />

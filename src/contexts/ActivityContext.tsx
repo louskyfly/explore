@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { Activity, Category, Priority, Status, Profile } from '../types/activity';
 import * as DB from '../services/database';
 import { useProfile } from './ProfileContext';
-import { addToQueue, removeByIdFromQueue } from '../services/syncQueue';
 
 interface Filters {
   search: string;
@@ -97,48 +96,34 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     if (!currentProfile) return;
     a.profile = currentProfile;
     await DB.insertActivity(a);
-    addToQueue({ type: 'push', activityId: a.id, profile: currentProfile });
     await refresh();
   }, [refresh, currentProfile]);
 
   const updateActivity = useCallback(async (a: Activity) => {
     await DB.updateActivity(a);
-    if (currentProfile) {
-      addToQueue({ type: 'push', activityId: a.id, profile: currentProfile });
-    }
     await refresh();
-  }, [refresh, currentProfile]);
+  }, [refresh]);
 
   const removeActivity = useCallback(async (id: string) => {
     await DB.deleteActivity(id);
-    removeByIdFromQueue(id);
-    if (currentProfile) {
-      addToQueue({ type: 'delete', activityId: id, profile: currentProfile });
-    }
     await refresh();
-  }, [refresh, currentProfile]);
+  }, [refresh]);
 
   const toggleFavorite = useCallback(async (id: string) => {
     const a = activities.find(act => act.id === id);
     if (!a) return;
     const updated = { ...a, isFavorite: !a.isFavorite, updatedAt: new Date().toISOString() };
     await DB.updateActivity(updated);
-    if (currentProfile) {
-      addToQueue({ type: 'push', activityId: id, profile: currentProfile });
-    }
     await refresh();
-  }, [activities, refresh, currentProfile]);
+  }, [activities, refresh]);
 
   const archiveActivity = useCallback(async (id: string) => {
     const a = activities.find(act => act.id === id);
     if (!a) return;
     const updated = { ...a, isArchived: true, updatedAt: new Date().toISOString() };
     await DB.updateActivity(updated);
-    if (currentProfile) {
-      addToQueue({ type: 'push', activityId: id, profile: currentProfile });
-    }
     await refresh();
-  }, [activities, refresh, currentProfile]);
+  }, [activities, refresh]);
 
   const duplicateActivity = useCallback(async (id: string) => {
     const a = activities.find(act => act.id === id);
@@ -157,7 +142,6 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       order: activities.length,
     };
     await DB.insertActivity(dup);
-    addToQueue({ type: 'push', activityId: dup.id, profile: currentProfile });
     await refresh();
   }, [activities, refresh, currentProfile]);
 
@@ -169,12 +153,9 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     }).filter(Boolean) as Activity[];
     for (const u of updates) {
       await DB.updateActivity(u);
-      if (currentProfile) {
-        addToQueue({ type: 'push', activityId: u.id, profile: currentProfile });
-      }
     }
     await refresh();
-  }, [activities, refresh, currentProfile]);
+  }, [activities, refresh]);
 
   return (
     <ActivityContext.Provider value={{

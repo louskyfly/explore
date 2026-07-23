@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, Alert,
+  View, Text, StyleSheet, ScrollView, Pressable, Alert, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -20,7 +20,8 @@ const COLORS = [
 export function SettingsScreen() {
   const { theme, isDark, settings, updateSettings } = useTheme();
   const { activities } = useActivities();
-  const { enabled, setEnabled, isOnline, isSyncing, lastSync, pendingCount, syncNow } = useSync();
+  const { enabled, setEnabled, isOnline, isSyncing, lastSync, syncNow, token, setToken } = useSync();
+  const [tokenInput, setTokenInput] = useState('');
   const navigation = useNavigation<any>();
 
   const handleExport = async () => {
@@ -140,50 +141,65 @@ export function SettingsScreen() {
 
         <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Synchronisation</Text>
         <View style={[styles.card, { backgroundColor: theme.glassBg, borderColor: theme.glassBorder, borderWidth: 1 }]}>
-          <Pressable style={styles.settingsRow} onPress={() => setEnabled(!enabled)}>
-            <MaterialIcons name={enabled ? 'cloud-done' : 'cloud-off'} size={20} color={enabled ? theme.success : theme.textSecondary} />
-            <Text style={[styles.settingsLabel, { color: theme.text }]}>Sync Firebase</Text>
-            <View style={[styles.toggle, { backgroundColor: enabled ? theme.success : theme.searchBackground }]}>
-              <View style={[styles.toggleKnob, { transform: [{ translateX: enabled ? 20 : 0 }] }]} />
-            </View>
-          </Pressable>
-          {enabled && (
+          <Text style={[styles.cardLabel, { color: theme.text }]}>Token GitHub</Text>
+          <Text style={[styles.cardSubLabel, { color: theme.textTertiary }]}>
+            Crée un token sur github.com/settings/tokens (scope: gist)
+          </Text>
+          <View style={styles.tokenRow}>
+            <TextInput
+              style={[styles.tokenInput, { backgroundColor: theme.searchBackground, color: theme.text, borderColor: theme.separator }]}
+              value={tokenInput}
+              onChangeText={setTokenInput}
+              placeholder={token ? '••••••••••••' : 'ghp_xxx...'}
+              placeholderTextColor={theme.textTertiary}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+            <Pressable
+              onPress={() => { if (tokenInput.trim()) setToken(tokenInput.trim()); }}
+              style={[styles.tokenBtn, { backgroundColor: theme.accent }]}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>OK</Text>
+            </Pressable>
+          </View>
+          {token ? (
             <>
               <View style={[styles.separator, { backgroundColor: theme.separator }]} />
-              <View style={styles.settingsRow}>
-                <MaterialIcons name={isOnline ? 'wifi' : 'wifi-off'} size={20} color={isOnline ? theme.success : theme.destructive} />
-                <Text style={[styles.settingsLabel, { color: theme.textSecondary }]}>
-                  {isOnline ? 'En ligne' : 'Hors ligne'}
-                </Text>
-                {isSyncing && (
-                  <MaterialIcons name="sync" size={18} color={theme.accent} style={{ opacity: 0.6 }} />
-                )}
-              </View>
-              {pendingCount > 0 && (
+              <Pressable style={styles.settingsRow} onPress={() => setEnabled(!enabled)}>
+                <MaterialIcons name={enabled ? 'cloud-done' : 'cloud-off'} size={20} color={enabled ? theme.success : theme.textSecondary} />
+                <Text style={[styles.settingsLabel, { color: theme.text }]}>Sync GitHub Gist</Text>
+                <View style={[styles.toggle, { backgroundColor: enabled ? theme.success : theme.searchBackground }]}>
+                  <View style={[styles.toggleKnob, { transform: [{ translateX: enabled ? 20 : 0 }] }]} />
+                </View>
+              </Pressable>
+              {enabled && (
                 <>
                   <View style={[styles.separator, { backgroundColor: theme.separator }]} />
                   <View style={styles.settingsRow}>
-                    <MaterialIcons name="pending" size={20} color={theme.warning} />
+                    <MaterialIcons name={isOnline ? 'wifi' : 'wifi-off'} size={20} color={isOnline ? theme.success : theme.destructive} />
                     <Text style={[styles.settingsLabel, { color: theme.textSecondary }]}>
-                      {pendingCount} changement(s) en attente
+                      {isOnline ? 'En ligne' : 'Hors ligne'}
                     </Text>
+                    {isSyncing && (
+                      <MaterialIcons name="sync" size={18} color={theme.accent} style={{ opacity: 0.6 }} />
+                    )}
                   </View>
-                </>
-              )}
-              {lastSync && (
-                <>
-                  <View style={[styles.separator, { backgroundColor: theme.separator }]} />
-                  <Pressable style={styles.settingsRow} onPress={syncNow}>
-                    <MaterialIcons name="schedule" size={20} color={theme.textSecondary} />
-                    <Text style={[styles.settingsLabel, { color: theme.textSecondary }]}>
-                      Dernière sync: {new Date(lastSync).toLocaleTimeString('fr-FR')}
-                    </Text>
-                    <MaterialIcons name="refresh" size={18} color={theme.accent} />
-                  </Pressable>
+                  {lastSync && (
+                    <>
+                      <View style={[styles.separator, { backgroundColor: theme.separator }]} />
+                      <Pressable style={styles.settingsRow} onPress={syncNow}>
+                        <MaterialIcons name="schedule" size={20} color={theme.textSecondary} />
+                        <Text style={[styles.settingsLabel, { color: theme.textSecondary }]}>
+                          Dernière sync: {new Date(lastSync).toLocaleTimeString('fr-FR')}
+                        </Text>
+                        <MaterialIcons name="refresh" size={18} color={theme.accent} />
+                      </Pressable>
+                    </>
+                  )}
                 </>
               )}
             </>
-          )}
+          ) : null}
         </View>
 
         <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Données</Text>
@@ -236,7 +252,8 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 40 },
   sectionTitle: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', marginTop: 20, marginBottom: 10 },
   card: { borderRadius: 16, padding: 16, marginBottom: 8 },
-  cardLabel: { fontSize: 15, fontWeight: '600', marginBottom: 12 },
+  cardLabel: { fontSize: 15, fontWeight: '600', marginBottom: 4 },
+  cardSubLabel: { fontSize: 12, marginBottom: 12 },
   themeRow: { flexDirection: 'row', gap: 8 },
   themeBtn: {
     flex: 1,
@@ -289,5 +306,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
+  },
+  tokenRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  tokenInput: {
+    flex: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    borderWidth: 1,
+  },
+  tokenBtn: {
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    justifyContent: 'center',
   },
 });

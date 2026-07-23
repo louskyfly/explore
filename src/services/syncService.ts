@@ -1,117 +1,106 @@
 import { Activity, Profile } from '../types/activity';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const PROJECT_ID = 'explore-sync';
-const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
-const COLLECTION = 'activities';
+const TOKEN_KEY = 'github_token';
+const GIST_ID_KEY = 'github_gist_id';
+const FILE_NAME = 'explore_activities.json';
 
-interface FirestoreDoc {
-  name: string;
-  fields: Record<string, any>;
+export async function getToken(): Promise<string | null> {
+  try { return await AsyncStorage.getItem(TOKEN_KEY); } catch { return null; }
 }
 
-function toFirestoreFields(a: Activity) {
-  return {
-    id: { stringValue: a.id },
-    profile: { stringValue: a.profile },
-    title: { stringValue: a.title },
-    description: { stringValue: a.description },
-    photos: { stringValue: JSON.stringify(a.photos) },
-    category: { stringValue: a.category },
-    placeName: { stringValue: a.placeName },
-    city: { stringValue: a.city },
-    country: { stringValue: a.country },
-    latitude: a.latitude != null ? { doubleValue: a.latitude } : { nullValue: null },
-    longitude: a.longitude != null ? { doubleValue: a.longitude } : { nullValue: null },
-    priority: { stringValue: a.priority },
-    status: { stringValue: a.status },
-    plannedDate: a.plannedDate ? { stringValue: a.plannedDate } : { nullValue: null },
-    notes: { stringValue: a.notes },
-    link: a.link ? { stringValue: a.link } : { nullValue: null },
-    budget: a.budget != null ? { doubleValue: a.budget } : { nullValue: null },
-    estimatedTime: a.estimatedTime ? { stringValue: a.estimatedTime } : { nullValue: null },
-    isFavorite: { booleanValue: a.isFavorite },
-    isArchived: { booleanValue: a.isArchived },
-    createdAt: { stringValue: a.createdAt },
-    updatedAt: { stringValue: a.updatedAt },
-    order: { integerValue: String(a.order) },
-  };
+export async function setToken(token: string): Promise<void> {
+  await AsyncStorage.setItem(TOKEN_KEY, token);
 }
 
-function fromFirestoreFields(fields: Record<string, any>): Activity {
-  const str = (k: string) => fields[k]?.stringValue || '';
-  const num = (k: string) => fields[k]?.doubleValue ?? fields[k]?.integerValue ? Number(fields[k].integerValue || fields[k].doubleValue) : undefined;
-  return {
-    id: str('id'),
-    profile: (str('profile') as Profile) || 'papa',
-    title: str('title'),
-    description: str('description'),
-    photos: JSON.parse(str('photos') || '[]'),
-    category: str('category') as any || 'autre',
-    placeName: str('placeName'),
-    city: str('city'),
-    country: str('country'),
-    latitude: num('latitude'),
-    longitude: num('longitude'),
-    priority: str('priority') as any || 'medium',
-    status: str('status') as any || 'todo',
-    plannedDate: str('plannedDate') || undefined,
-    notes: str('notes'),
-    link: str('link') || undefined,
-    budget: num('budget'),
-    estimatedTime: str('estimatedTime') || undefined,
-    isFavorite: fields.isFavorite?.booleanValue || false,
-    isArchived: fields.isArchived?.booleanValue || false,
-    createdAt: str('createdAt'),
-    updatedAt: str('updatedAt'),
-    order: num('order') || 0,
-  };
+export async function getGistId(): Promise<string | null> {
+  try { return await AsyncStorage.getItem(GIST_ID_KEY); } catch { return null; }
 }
 
-export async function pushActivity(activity: Activity): Promise<void> {
-  const url = `${BASE_URL}/${COLLECTION}/${activity.id}`;
-  const body = { fields: toFirestoreFields(activity) };
+async function apiFetch(url: string, method: string, body?: any): Promise<any> {
+  const token = await getToken();
+  if (!token) throw new Error('Token GitHub manquant');
   const res = await fetch(url, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`Push failed: ${res.status}`);
-}
-
-export async function pullActivities(profile: Profile): Promise<Activity[]> {
-  const url = `${BASE_URL}/${COLLECTION}`;
-  const body = {
-    structuredQuery: {
-      from: [{ collectionId: COLLECTION }],
-      where: {
-        fieldFilter: {
-          field: { fieldPath: 'profile' },
-          op: 'EQUAL',
-          value: { stringValue: profile },
-        },
-      },
+    method,
+    headers: {
+      'Authorization': `token ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/vnd.github+json',
     },
-  };
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: body ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(`Pull failed: ${res.status}`);
-  const data = await res.json();
-  return (data.document || []).map((doc: FirestoreDoc) => fromFirestoreFields(doc.fields));
+  if (!res.ok) throw new Error(`GitHub API ${res.status}: ${await res.text()}`);
+  return res.json();
 }
 
-export async function removeActivity(id: string): Promise<void> {
-  const url = `${BASE_URL}/${COLLECTION}/${id}`;
-  const res = await fetch(url, { method: 'DELETE' });
-  if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+export async function createGist(activities: Activity[]): Promise<string> {
+  const data: Record<string, Activity[]> = {};
+  for (const a of activities) {
+    if (!data[a.profile]) data[a.profile] = [];
+    data[a.profile].push(a);
+  }
+  const result = await apiFetch('https://api.github.com/gists', 'POST', {
+    description: 'Explore Activities Sync',
+    public: false,
+    files: {
+      [FILE_NAME]: { content: JSON.stringify(data, null, 2) },
+    },
+  });
+  await AsyncStorage.setItem(GIST_ID_KEY, result.id);
+  return result.id;
 }
 
-export async function pullAllActivities(): Promise<Activity[]> {
-  const url = `${BASE_URL}/${COLLECTION}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Pull all failed: ${res.status}`);
-  const data = await res.json();
-  return (data.document || []).map((doc: FirestoreDoc) => fromFirestoreFields(doc.fields));
+export async function pushToGist(activities: Activity[]): Promise<void> {
+  let gistId = await getGistId();
+  if (!gistId) {
+    gistId = await createGist(activities);
+    return;
+  }
+  const data: Record<string, Activity[]> = {};
+  for (const a of activities) {
+    if (!data[a.profile]) data[a.profile] = [];
+    data[a.profile].push(a);
+  }
+  await apiFetch(`https://api.github.com/gists/${gistId}`, 'PATCH', {
+    files: {
+      [FILE_NAME]: { content: JSON.stringify(data, null, 2) },
+    },
+  });
+}
+
+export async function pullFromGist(profile: Profile): Promise<Activity[]> {
+  const gistId = await getGistId();
+  if (!gistId) return [];
+  try {
+    const gist = await apiFetch(`https://api.github.com/gists/${gistId}`, 'GET');
+    const file = gist.files?.[FILE_NAME];
+    if (!file?.content) return [];
+    const all: Record<string, Activity[]> = JSON.parse(file.content);
+    return all[profile] || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function pullAllFromGist(): Promise<Activity[]> {
+  const gistId = await getGistId();
+  if (!gistId) return [];
+  try {
+    const gist = await apiFetch(`https://api.github.com/gists/${gistId}`, 'GET');
+    const file = gist.files?.[FILE_NAME];
+    if (!file?.content) return [];
+    const all: Record<string, Activity[]> = JSON.parse(file.content);
+    return Object.values(all).flat();
+  } catch {
+    return [];
+  }
+}
+
+export async function deleteFromGist(): Promise<void> {
+  const gistId = await getGistId();
+  if (!gistId) return;
+  try {
+    await apiFetch(`https://api.github.com/gists/${gistId}`, 'DELETE');
+    await AsyncStorage.removeItem(GIST_ID_KEY);
+  } catch {}
 }
