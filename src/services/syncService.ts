@@ -1,104 +1,117 @@
 import { Activity, Profile } from '../types/activity';
 
+const PROJECT_ID = 'explore-sync';
+const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 const COLLECTION = 'activities';
 
-function activityToDoc(a: Activity) {
+interface FirestoreDoc {
+  name: string;
+  fields: Record<string, any>;
+}
+
+function toFirestoreFields(a: Activity) {
   return {
-    id: a.id,
-    profile: a.profile,
-    title: a.title,
-    description: a.description,
-    photos: JSON.stringify(a.photos),
-    category: a.category,
-    placeName: a.placeName,
-    city: a.city,
-    country: a.country,
-    latitude: a.latitude ?? null,
-    longitude: a.longitude ?? null,
-    priority: a.priority,
-    status: a.status,
-    plannedDate: a.plannedDate ?? null,
-    notes: a.notes,
-    link: a.link ?? null,
-    budget: a.budget ?? null,
-    estimatedTime: a.estimatedTime ?? null,
-    isFavorite: a.isFavorite,
-    isArchived: a.isArchived,
-    createdAt: a.createdAt,
-    updatedAt: a.updatedAt,
-    order: a.order,
+    id: { stringValue: a.id },
+    profile: { stringValue: a.profile },
+    title: { stringValue: a.title },
+    description: { stringValue: a.description },
+    photos: { stringValue: JSON.stringify(a.photos) },
+    category: { stringValue: a.category },
+    placeName: { stringValue: a.placeName },
+    city: { stringValue: a.city },
+    country: { stringValue: a.country },
+    latitude: a.latitude != null ? { doubleValue: a.latitude } : { nullValue: null },
+    longitude: a.longitude != null ? { doubleValue: a.longitude } : { nullValue: null },
+    priority: { stringValue: a.priority },
+    status: { stringValue: a.status },
+    plannedDate: a.plannedDate ? { stringValue: a.plannedDate } : { nullValue: null },
+    notes: { stringValue: a.notes },
+    link: a.link ? { stringValue: a.link } : { nullValue: null },
+    budget: a.budget != null ? { doubleValue: a.budget } : { nullValue: null },
+    estimatedTime: a.estimatedTime ? { stringValue: a.estimatedTime } : { nullValue: null },
+    isFavorite: { booleanValue: a.isFavorite },
+    isArchived: { booleanValue: a.isArchived },
+    createdAt: { stringValue: a.createdAt },
+    updatedAt: { stringValue: a.updatedAt },
+    order: { integerValue: String(a.order) },
   };
 }
 
-function docToActivity(d: any): Activity {
+function fromFirestoreFields(fields: Record<string, any>): Activity {
+  const str = (k: string) => fields[k]?.stringValue || '';
+  const num = (k: string) => fields[k]?.doubleValue ?? fields[k]?.integerValue ? Number(fields[k].integerValue || fields[k].doubleValue) : undefined;
   return {
-    id: d.id,
-    profile: d.profile || 'papa',
-    title: d.title,
-    description: d.description || '',
-    photos: JSON.parse(d.photos || '[]'),
-    category: d.category || 'autre',
-    placeName: d.placeName || '',
-    city: d.city || '',
-    country: d.country || '',
-    latitude: d.latitude,
-    longitude: d.longitude,
-    priority: d.priority || 'medium',
-    status: d.status || 'todo',
-    plannedDate: d.plannedDate,
-    notes: d.notes || '',
-    link: d.link,
-    budget: d.budget,
-    estimatedTime: d.estimatedTime,
-    isFavorite: !!d.isFavorite,
-    isArchived: !!d.isArchived,
-    createdAt: d.createdAt,
-    updatedAt: d.updatedAt,
-    order: d.order || 0,
+    id: str('id'),
+    profile: (str('profile') as Profile) || 'papa',
+    title: str('title'),
+    description: str('description'),
+    photos: JSON.parse(str('photos') || '[]'),
+    category: str('category') as any || 'autre',
+    placeName: str('placeName'),
+    city: str('city'),
+    country: str('country'),
+    latitude: num('latitude'),
+    longitude: num('longitude'),
+    priority: str('priority') as any || 'medium',
+    status: str('status') as any || 'todo',
+    plannedDate: str('plannedDate') || undefined,
+    notes: str('notes'),
+    link: str('link') || undefined,
+    budget: num('budget'),
+    estimatedTime: str('estimatedTime') || undefined,
+    isFavorite: fields.isFavorite?.booleanValue || false,
+    isArchived: fields.isArchived?.booleanValue || false,
+    createdAt: str('createdAt'),
+    updatedAt: str('updatedAt'),
+    order: num('order') || 0,
   };
 }
 
 export async function pushActivity(activity: Activity): Promise<void> {
-  const { getDb } = await import('../config/firebase');
-  const { doc, setDoc } = await import('firebase/firestore');
-  const database = await getDb();
-  const ref = doc(database, COLLECTION, activity.id);
-  await setDoc(ref, activityToDoc(activity));
-}
-
-export async function pushActivities(activities: Activity[]): Promise<void> {
-  const { getDb } = await import('../config/firebase');
-  const { doc, writeBatch } = await import('firebase/firestore');
-  const database = await getDb();
-  const batch = writeBatch(database);
-  for (const a of activities) {
-    const ref = doc(database, COLLECTION, a.id);
-    batch.set(ref, activityToDoc(a));
-  }
-  await batch.commit();
+  const url = `${BASE_URL}/${COLLECTION}/${activity.id}`;
+  const body = { fields: toFirestoreFields(activity) };
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`Push failed: ${res.status}`);
 }
 
 export async function pullActivities(profile: Profile): Promise<Activity[]> {
-  const { getDb } = await import('../config/firebase');
-  const { collection, getDocs, query, where } = await import('firebase/firestore');
-  const database = await getDb();
-  const q = query(collection(database, COLLECTION), where('profile', '==', profile));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((d: any) => docToActivity(d.data()));
+  const url = `${BASE_URL}/${COLLECTION}`;
+  const body = {
+    structuredQuery: {
+      from: [{ collectionId: COLLECTION }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: 'profile' },
+          op: 'EQUAL',
+          value: { stringValue: profile },
+        },
+      },
+    },
+  };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`Pull failed: ${res.status}`);
+  const data = await res.json();
+  return (data.document || []).map((doc: FirestoreDoc) => fromFirestoreFields(doc.fields));
 }
 
 export async function removeActivity(id: string): Promise<void> {
-  const { getDb } = await import('../config/firebase');
-  const { doc, deleteDoc } = await import('firebase/firestore');
-  const database = await getDb();
-  const ref = doc(database, COLLECTION, id);
-  await deleteDoc(ref);
+  const url = `${BASE_URL}/${COLLECTION}/${id}`;
+  const res = await fetch(url, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
 }
 
 export async function pullAllActivities(): Promise<Activity[]> {
-  const { getDb } = await import('../config/firebase');
-  const { collection, getDocs } = await import('firebase/firestore');
-  const database = await getDb();
-  const snapshot = await getDocs(collection(database, COLLECTION));
-  return snapshot.docs.map((d: any) => docToActivity(d.data()));
+  const url = `${BASE_URL}/${COLLECTION}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Pull all failed: ${res.status}`);
+  const data = await res.json();
+  return (data.document || []).map((doc: FirestoreDoc) => fromFirestoreFields(doc.fields));
 }
