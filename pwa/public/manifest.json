@@ -1,6 +1,6 @@
 {
-  "name": "Explore - Rallye Découverte",
-  "short_name": "Explore",
+  "name": "PhotoMap - Rallye Découverte",
+  "short_name": "PhotoMap",
   "description": "Découvrez Bilbao et Saragosse en team ! Rallye photo et défis IA.",
   "start_url": "/",
   "scope": "/",

@@ -69,7 +69,7 @@ export async function renderSettings(container) {
       </div>
 
       <div style="text-align:center;padding:20px 0;color:var(--text-tertiary);font-size:13px" class="animate-in">
-        <div>🧭 Explore v1.0.0</div>
+        <div>🧭 PhotoMap v1.0.0</div>
         <div style="margin-top:4px">Rallye Découverte PWA</div>
       </div>
     </div>

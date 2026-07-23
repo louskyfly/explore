@@ -6,7 +6,7 @@ import { updateHeader } from '../components.js';
 const cities = [bilbao, zaragoza];
 
 export async function renderHome(container) {
-  updateHeader('Explore');
+  updateHeader('PhotoMap');
   const allProgress = await db.getAllProgress();
   const allPhotos = await db.getAllPhotos();
   const teams = await db.getAllTeams();

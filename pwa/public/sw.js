@@ -1,4 +1,4 @@
-const CACHE_NAME = 'explore-v1';
+const CACHE_NAME = 'photomap-v1';
 const TILE_CACHE = 'tiles-v1';
 
 self.addEventListener('install', e => {
