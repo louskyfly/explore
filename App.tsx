@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { ProfileProvider } from './src/contexts/ProfileContext';
 import { ActivityProvider } from './src/contexts/ActivityContext';
+import { SyncProvider } from './src/contexts/SyncContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
 function AppInner() {
@@ -24,7 +25,9 @@ export default function App() {
         <ThemeProvider>
           <ProfileProvider>
             <ActivityProvider>
-              <AppInner />
+              <SyncProvider>
+                <AppInner />
+              </SyncProvider>
             </ActivityProvider>
           </ProfileProvider>
         </ThemeProvider>

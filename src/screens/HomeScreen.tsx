@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 import { useActivities } from '../contexts/ActivityContext';
 import { useProfile } from '../contexts/ProfileContext';
+import { useSync } from '../contexts/SyncContext';
 import { GlassCard } from '../components/GlassCard';
 import { CategoryBadge } from '../components/CategoryBadge';
 import { StatusBadge } from '../components/StatusBadge';
@@ -25,6 +26,7 @@ export function HomeScreen() {
   const { theme, isDark } = useTheme();
   const { filtered, loading, filters, setFilters, refresh, toggleFavorite } = useActivities();
   const { currentProfile, logout, getProfileInfo } = useProfile();
+  const { isSyncing, pendingCount, enabled, setEnabled, syncNow } = useSync();
   const navigation = useNavigation<any>();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -196,6 +198,25 @@ export function HomeScreen() {
             </Pressable>
           </View>
           <View style={styles.headerActions}>
+            <Pressable
+              onPress={() => { if (enabled) syncNow(); else setEnabled(true); }}
+              style={[styles.headerBtn, {
+                backgroundColor: enabled
+                  ? (isSyncing ? theme.accent + '30' : theme.success + '20')
+                  : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.45)'),
+              }]}
+            >
+              <MaterialIcons
+                name={isSyncing ? 'sync' : enabled ? 'cloud-done' : 'cloud-off'}
+                size={20}
+                color={enabled ? (isSyncing ? theme.accent : theme.success) : theme.textTertiary}
+              />
+              {pendingCount > 0 && (
+                <View style={[styles.syncBadge, { backgroundColor: theme.destructive }]}>
+                  <Text style={styles.syncBadgeText}>{pendingCount > 9 ? '9+' : pendingCount}</Text>
+                </View>
+              )}
+            </Pressable>
             <Pressable onPress={() => navigation.navigate('Map')} style={[styles.headerBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.45)' }]}>
               <MaterialIcons name="map" size={20} color={theme.accent} />
             </Pressable>
@@ -527,5 +548,21 @@ const styles = StyleSheet.create({
   profileBadgeText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  syncBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+  },
+  syncBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#fff',
   },
 });

@@ -33,7 +33,8 @@ const allCategories = [
   { key: 'architecture', label: 'Architecture', icon: '🏗️' },
   { key: 'unusual', label: 'Insolite', icon: '✨' },
   { key: 'culture', label: 'Culture', icon: '🎭' },
-  { key: 'gastronomy', label: 'Gastronomie', icon: '🍷' }
+  { key: 'gastronomy', label: 'Gastronomie', icon: '🍷' },
+  { key: 'secrets', label: 'Lieux Cachés', icon: '🔮' }
 ];
 
 function getCity(id) { return cities.find(c => c.id === id); }

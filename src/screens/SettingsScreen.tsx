@@ -10,6 +10,7 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { useTheme } from '../contexts/ThemeContext';
 import { useActivities } from '../contexts/ActivityContext';
+import { useSync } from '../contexts/SyncContext';
 
 const COLORS = [
   '#007AFF', '#5856D6', '#FF2D55', '#FF9500', '#34C759',
@@ -19,6 +20,7 @@ const COLORS = [
 export function SettingsScreen() {
   const { theme, isDark, settings, updateSettings } = useTheme();
   const { activities } = useActivities();
+  const { enabled, setEnabled, isOnline, isSyncing, lastSync, pendingCount, syncNow } = useSync();
   const navigation = useNavigation<any>();
 
   const handleExport = async () => {
@@ -136,6 +138,54 @@ export function SettingsScreen() {
           </View>
         </View>
 
+        <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Synchronisation</Text>
+        <View style={[styles.card, { backgroundColor: theme.glassBg, borderColor: theme.glassBorder, borderWidth: 1 }]}>
+          <Pressable style={styles.settingsRow} onPress={() => setEnabled(!enabled)}>
+            <MaterialIcons name={enabled ? 'cloud-done' : 'cloud-off'} size={20} color={enabled ? theme.success : theme.textSecondary} />
+            <Text style={[styles.settingsLabel, { color: theme.text }]}>Sync Firebase</Text>
+            <View style={[styles.toggle, { backgroundColor: enabled ? theme.success : theme.searchBackground }]}>
+              <View style={[styles.toggleKnob, { transform: [{ translateX: enabled ? 20 : 0 }] }]} />
+            </View>
+          </Pressable>
+          {enabled && (
+            <>
+              <View style={[styles.separator, { backgroundColor: theme.separator }]} />
+              <View style={styles.settingsRow}>
+                <MaterialIcons name={isOnline ? 'wifi' : 'wifi-off'} size={20} color={isOnline ? theme.success : theme.destructive} />
+                <Text style={[styles.settingsLabel, { color: theme.textSecondary }]}>
+                  {isOnline ? 'En ligne' : 'Hors ligne'}
+                </Text>
+                {isSyncing && (
+                  <MaterialIcons name="sync" size={18} color={theme.accent} style={{ opacity: 0.6 }} />
+                )}
+              </View>
+              {pendingCount > 0 && (
+                <>
+                  <View style={[styles.separator, { backgroundColor: theme.separator }]} />
+                  <View style={styles.settingsRow}>
+                    <MaterialIcons name="pending" size={20} color={theme.warning} />
+                    <Text style={[styles.settingsLabel, { color: theme.textSecondary }]}>
+                      {pendingCount} changement(s) en attente
+                    </Text>
+                  </View>
+                </>
+              )}
+              {lastSync && (
+                <>
+                  <View style={[styles.separator, { backgroundColor: theme.separator }]} />
+                  <Pressable style={styles.settingsRow} onPress={syncNow}>
+                    <MaterialIcons name="schedule" size={20} color={theme.textSecondary} />
+                    <Text style={[styles.settingsLabel, { color: theme.textSecondary }]}>
+                      Dernière sync: {new Date(lastSync).toLocaleTimeString('fr-FR')}
+                    </Text>
+                    <MaterialIcons name="refresh" size={18} color={theme.accent} />
+                  </Pressable>
+                </>
+              )}
+            </>
+          )}
+        </View>
+
         <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Données</Text>
         <View style={[styles.card, { backgroundColor: theme.glassBg, borderColor: theme.glassBorder, borderWidth: 1 }]}>
           <Pressable style={styles.settingsRow} onPress={handleExport}>
@@ -222,4 +272,22 @@ const styles = StyleSheet.create({
   settingsLabel: { fontSize: 15, flex: 1 },
   versionText: { fontSize: 14 },
   separator: { height: StyleSheet.hairlineWidth },
+  toggle: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  toggleKnob: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
 });
