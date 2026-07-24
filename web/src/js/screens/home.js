@@ -79,7 +79,7 @@ export async function renderHome(container) {
 
     list.querySelectorAll('.activity-card').forEach(card => {
       card.addEventListener('click', () => {
-        window.dispatchEvent(new CustomEvent('navigate-activity', { detail: card.dataset.id }));
+        window.dispatchEvent(new CustomEvent('navigate-detail', { detail: { id: card.dataset.id } }));
       });
     });
   }
