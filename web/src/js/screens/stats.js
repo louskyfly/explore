@@ -1,6 +1,6 @@
 import { db } from '../db.js';
 import { getCurrentProfile } from './profileSelect.js';
-import { updateHeader, CATEGORIES, STATUSES, getCategoryById, getStatusById } from '../components.js';
+import { updateHeader, STATUSES, getTagColor } from '../components.js';
 
 export async function renderStats(container) {
   const profile = getCurrentProfile();
@@ -8,85 +8,105 @@ export async function renderStats(container) {
 
   updateHeader('Statistiques');
 
-  const activities = await db.getActivitiesByProfile(profile);
+  const activities = await db.getActivities(profile);
+
+  const statusCounts = STATUSES.map(s => ({
+    ...s,
+    count: activities.filter(a => a.status === s.id).length
+  }));
+
+  const tagCounts = {};
+  activities.forEach(a => {
+    (a.tags || []).forEach(t => {
+      tagCounts[t] = (tagCounts[t] || 0) + 1;
+    });
+  });
+  const tagStats = Object.entries(tagCounts)
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count);
+
   const total = activities.length;
+  const maxStatus = Math.max(...statusCounts.map(s => s.count), 1);
+  const maxTag = Math.max(...tagStats.map(t => t.count), 1);
 
-  const byStatus = {};
-  STATUSES.forEach(s => { byStatus[s.id] = 0; });
-  activities.forEach(a => {
-    if (byStatus[a.status] !== undefined) byStatus[a.status]++;
-  });
-
-  const byCategory = {};
-  CATEGORIES.forEach(c => { byCategory[c.id] = 0; });
-  activities.forEach(a => {
-    if (byCategory[a.category] !== undefined) byCategory[a.category]++;
-    else byCategory['other']++;
-  });
-  const maxCat = Math.max(...Object.values(byCategory), 1);
-
-  const doneCount = byStatus['done'] || 0;
-  const percent = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+  const donePercent = total > 0 ? Math.round((statusCounts.find(s => s.id === 'done').count / total) * 100) : 0;
 
   container.innerHTML = `
     <div class="page">
-      <h2 class="section-title animate-in">Resume</h2>
-      <div class="stats-grid animate-in stagger-1">
-        <div class="stat-card glass-card">
-          <div class="stat-value">${total}</div>
-          <div class="stat-label">Total</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-number">${total}</span>
+          <span class="stat-label">Total</span>
         </div>
-        <div class="stat-card glass-card">
-          <div class="stat-value">${percent}%</div>
-          <div class="stat-label">Realisees</div>
+        <div class="stat-card">
+          <span class="stat-number">${donePercent}%</span>
+          <span class="stat-label">Realise</span>
         </div>
-      </div>
-
-      <div class="glass-card animate-in stagger-2" style="padding:16px;margin-bottom:20px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span style="font-size:14px;font-weight:600;">Progression</span>
-          <span style="font-size:14px;color:var(--text-secondary);">${doneCount}/${total}</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width:${percent}%"></div>
+        <div class="stat-card">
+          <span class="stat-number">${tagStats.length}</span>
+          <span class="stat-label">Tags</span>
         </div>
       </div>
 
-      <h2 class="section-title animate-in stagger-3">Par statut</h2>
-      <div class="bar-chart animate-in stagger-3" style="margin-bottom:24px;">
-        ${STATUSES.map(s => {
-          const count = byStatus[s.id] || 0;
-          const width = total > 0 ? (count / total) * 100 : 0;
-          return `
-            <div class="bar-row">
-              <div class="bar-label">${s.icon} ${s.label}</div>
-              <div class="bar-track">
-                <div class="bar-fill" style="width:${width}%;background:${s.color};">
-                  ${count > 0 ? `<span class="bar-value">${count}</span>` : ''}
-                </div>
+      <div class="chart-container">
+        <h3 class="chart-title">Par statut</h3>
+        <div class="chart-bars">
+          ${statusCounts.map(s => `
+            <div class="chart-bar-row">
+              <span class="chart-label">${s.icon} ${s.label}</span>
+              <div class="chart-bar-track">
+                <div class="chart-bar" style="width:${s.count ? (s.count / maxStatus * 100) : 0}%;background:${s.color}"></div>
               </div>
+              <span class="chart-value">${s.count}</span>
             </div>
-          `;
-        }).join('')}
+          `).join('')}
+        </div>
       </div>
 
-      <h2 class="section-title animate-in stagger-4">Par categorie</h2>
-      <div class="bar-chart animate-in stagger-5">
-        ${CATEGORIES.map(c => {
-          const count = byCategory[c.id] || 0;
-          const width = maxCat > 0 ? (count / maxCat) * 100 : 0;
-          return `
-            <div class="bar-row">
-              <div class="bar-label">${c.icon} ${c.label}</div>
-              <div class="bar-track">
-                <div class="bar-fill" style="width:${width}%">
-                  ${count > 0 ? `<span class="bar-value">${count}</span>` : ''}
+      ${tagStats.length > 0 ? `
+        <div class="chart-container">
+          <h3 class="chart-title">Par tag</h3>
+          <div class="chart-bars">
+            ${tagStats.map(t => `
+              <div class="chart-bar-row">
+                <span class="chart-label">
+                  <span class="tag-dot" style="background:${getTagColor(t.tag)}"></span>
+                  ${t.tag}
+                </span>
+                <div class="chart-bar-track">
+                  <div class="chart-bar" style="width:${t.count / maxTag * 100}%;background:${getTagColor(t.tag)}"></div>
                 </div>
+                <span class="chart-value">${t.count}</span>
               </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      <div class="chart-container">
+        <h3 class="chart-title">Recence</h3>
+        <div class="chart-bars">
+          ${getRecentStats(activities).map(d => `
+            <div class="chart-bar-row">
+              <span class="chart-label">${d.label}</span>
+              <div class="chart-bar-track">
+                <div class="chart-bar" style="width:${d.count ? (d.count / d.max * 100) : 0}%;background:var(--accent)"></div>
+              </div>
+              <span class="chart-value">${d.count}</span>
             </div>
-          `;
-        }).join('')}
+          `).join('')}
+        </div>
       </div>
     </div>
   `;
+}
+
+function getRecentStats(activities) {
+  const now = Date.now();
+  const day = 86400000;
+  const labels = ["Aujourd'hui", '7 jours', '30 jours', 'Tout'];
+  const periods = [day, 7 * day, 30 * day, Infinity];
+  const counts = periods.map(p => activities.filter(a => now - a.createdAt < p).length);
+  const max = Math.max(...counts, 1);
+  return labels.map((label, i) => ({ label, count: counts[i], max }));
 }

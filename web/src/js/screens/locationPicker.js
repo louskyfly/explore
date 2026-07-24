@@ -1,126 +1,166 @@
-import { db } from '../db.js';
-import { getCurrentProfile } from './profileSelect.js';
-import { updateHeader, showToast, CATEGORIES } from '../components.js';
+import { updateHeader, showToast } from '../components.js';
 
-export async function renderLocationPicker(container, params) {
+export function renderLocationPicker(container, params) {
   updateHeader('Choisir un lieu');
 
-  const startLat = params.lat || 48.8566;
-  const startLng = params.lng || 2.3522;
+  const initialLat = params?.lat || 46.6;
+  const initialLng = params?.lng || 1.8;
 
   container.innerHTML = `
-    <div class="page" style="padding:0;height:100%;position:relative;">
-      <div id="picker-map" style="width:100%;height:calc(100% - 60px);"></div>
-      <div class="search-bar" style="position:absolute;top:12px;left:12px;right:12px;z-index:50;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="picker-search" placeholder="Rechercher un lieu...">
+    <div class="page" style="padding:0;display:flex;flex-direction:column;height:100%">
+      <div class="picker-search-container">
+        <input type="text" class="search-input" id="picker-search" placeholder="Rechercher une adresse..." autocomplete="off">
+        <div id="picker-search-results" class="picker-search-results hidden"></div>
       </div>
-      <div id="picker-search-results" style="position:absolute;top:56px;left:12px;right:12px;z-index:50;display:none;"></div>
-      <div style="padding:12px;display:flex;gap:8px;height:60px;align-items:center;">
-        <button class="btn btn-secondary" style="flex:1" id="picker-cancel">Annuler</button>
-        <button class="btn btn-primary" style="flex:1" id="picker-confirm">Choisir ici</button>
+      <div id="picker-map" class="picker-map"></div>
+      <div class="picker-footer">
+        <div id="picker-selected" class="picker-selected">
+          <span class="picker-pin">\uD83D\uDCCD</span>
+          <span id="picker-address">Appuie sur la carte ou recherche un lieu</span>
+        </div>
+        <button class="btn btn-primary" id="picker-confirm">Confirmer</button>
       </div>
     </div>
   `;
 
-  let pickedLat = startLat;
-  let pickedLng = startLng;
-  let pickedName = '';
-  let pickerMap = null;
-  let pickedMarker = null;
+  let marker = null;
+  let selectedLat = initialLat;
+  let selectedLng = initialLng;
+  let selectedName = '';
 
-  setTimeout(() => {
+  const map = L.map('picker-map', { zoomControl: false }).setView([initialLat, initialLng], 13);
+  L.control.zoom({ position: 'topright' }).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+
+  setTimeout(() => map.invalidateSize(), 100);
+
+  if (params?.lat && params?.lng) {
+    marker = L.circleMarker([params.lat, params.lng], {
+      radius: 10, fillColor: '#EC407A', color: '#fff', weight: 3, fillOpacity: 0.9
+    }).addTo(map);
+    reverseGeocode(params.lat, params.lng);
+  }
+
+  async function reverseGeocode(lat, lng) {
     try {
-      pickerMap = L.map('picker-map', { zoomControl: false, attributionControl: false }).setView([startLat, startLng], 14);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(pickerMap);
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+        { headers: { 'User-Agent': 'ExplorePWA/1.0' } }
+      );
+      const data = await res.json();
+      selectedName = data.display_name || '';
+      const short = shortenAddress(data);
+      document.getElementById('picker-address').textContent = short || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    } catch {
+      selectedName = '';
+      document.getElementById('picker-address').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    }
+  }
 
-      pickedMarker = L.marker([startLat, startLng], {
-        draggable: true
-      }).addTo(pickerMap);
+  function shortenAddress(data) {
+    if (!data) return '';
+    const addr = data.address || {};
+    const parts = [];
+    if (addr.house_number && addr.road) {
+      parts.push(`${addr.road} ${addr.house_number}`);
+    } else if (addr.road) {
+      parts.push(addr.road);
+    }
+    if (addr.city || addr.town || addr.village) {
+      parts.push(addr.city || addr.town || addr.village);
+    }
+    return parts.join(', ') || data.display_name?.split(',').slice(0, 2).join(',') || '';
+  }
 
-      pickedMarker.on('dragend', (e) => {
-        const pos = e.target.getLatLng();
-        pickedLat = pos.lat;
-        pickedLng = pos.lng;
-        pickedName = '';
-      });
+  function placeMarker(lat, lng) {
+    selectedLat = lat;
+    selectedLng = lng;
+    if (marker) {
+      marker.setLatLng([lat, lng]);
+    } else {
+      marker = L.circleMarker([lat, lng], {
+        radius: 10, fillColor: '#EC407A', color: '#fff', weight: 3, fillOpacity: 0.9
+      }).addTo(map);
+    }
+    map.setView([lat, lng], Math.max(map.getZoom(), 15));
+    reverseGeocode(lat, lng);
+  }
 
-      pickerMap.on('click', (e) => {
-        pickedLat = e.latlng.lat;
-        pickedLng = e.latlng.lng;
-        pickedMarker.setLatLng(e.latlng);
-        pickedName = '';
-      });
+  map.on('click', (e) => {
+    placeMarker(e.latlng.lat, e.latlng.lng);
+  });
 
-      setTimeout(() => pickerMap.invalidateSize(), 100);
-    } catch (e) {}
-  }, 100);
-
+  let debounce;
   const searchInput = container.querySelector('#picker-search');
   const resultsDiv = container.querySelector('#picker-search-results');
-  let searchTimeout = null;
 
   searchInput.addEventListener('input', () => {
-    clearTimeout(searchTimeout);
+    clearTimeout(debounce);
     const q = searchInput.value.trim();
     if (q.length < 3) {
-      resultsDiv.style.display = 'none';
+      resultsDiv.classList.add('hidden');
       return;
     }
-    searchTimeout = setTimeout(async () => {
+    debounce = setTimeout(async () => {
       try {
-        const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&accept-language=fr`);
-        const results = await resp.json();
-        if (results.length === 0) {
-          resultsDiv.style.display = 'none';
-          return;
-        }
-        resultsDiv.style.display = 'block';
-        resultsDiv.className = 'glass-card';
-        resultsDiv.style.padding = '8px';
-        resultsDiv.innerHTML = results.map(r => `
-          <div class="search-result-item" data-lat="${r.lat}" data-lng="${r.lon}" data-name="${escapeAttr(r.display_name)}" style="padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;color:var(--text-primary);transition:background 0.15s;">
-            \uD83D\uDCCD ${escapeHtml(r.display_name.length > 60 ? r.display_name.substring(0, 60) + '...' : r.display_name)}
-          </div>
-        `).join('');
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=6&addressdetails=1`,
+          { headers: { 'User-Agent': 'ExplorePWA/1.0' } }
+        );
+        const data = await res.json();
+        if (data.length === 0) {
+          resultsDiv.innerHTML = '<div class="picker-search-item empty">Aucun resultat</div>';
+        } else {
+          resultsDiv.innerHTML = data.map(r => `
+            <div class="picker-search-item" data-lat="${r.lat}" data-lon="${r.lon}">
+              <div class="picker-search-icon">\uD83D\uDCCD</div>
+              <div class="picker-search-text">
+                <div class="picker-search-name">${shortenAddress(r)}</div>
+                <div class="picker-search-detail">${r.display_name.split(',').slice(0, 4).join(',')}</div>
+              </div>
+            </div>
+          `).join('');
 
-        resultsDiv.querySelectorAll('.search-result-item').forEach(item => {
-          item.addEventListener('click', () => {
-            const lat = parseFloat(item.dataset.lat);
-            const lng = parseFloat(item.dataset.lng);
-            pickedLat = lat;
-            pickedLng = lng;
-            pickedName = item.dataset.name;
-            pickerMap.setView([lat, lng], 16);
-            pickedMarker.setLatLng([lat, lng]);
-            resultsDiv.style.display = 'none';
-            searchInput.value = '';
+          resultsDiv.querySelectorAll('.picker-search-item[data-lat]').forEach(item => {
+            item.addEventListener('click', () => {
+              const lat = parseFloat(item.dataset.lat);
+              const lon = parseFloat(item.dataset.lon);
+              placeMarker(lat, lon);
+              resultsDiv.classList.add('hidden');
+              searchInput.value = '';
+            });
           });
-          item.addEventListener('mouseenter', () => { item.style.background = 'var(--ripple)'; });
-          item.addEventListener('mouseleave', () => { item.style.background = 'transparent'; });
-        });
-      } catch (e) {}
+        }
+        resultsDiv.classList.remove('hidden');
+      } catch (e) {
+        console.error('Nominatim error:', e);
+        showToast('Erreur de recherche', 'error');
+      }
     }, 400);
   });
 
-  container.querySelector('#picker-cancel').addEventListener('click', () => {
-    window.dispatchEvent(new CustomEvent('navigate-back'));
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const firstItem = resultsDiv.querySelector('.picker-search-item[data-lat]');
+      if (firstItem) firstItem.click();
+    }
+  });
+
+  searchInput.addEventListener('blur', () => {
+    setTimeout(() => resultsDiv.classList.add('hidden'), 250);
+  });
+
+  searchInput.addEventListener('focus', () => {
+    if (resultsDiv.children.length > 0) resultsDiv.classList.remove('hidden');
   });
 
   container.querySelector('#picker-confirm').addEventListener('click', () => {
-    if (params.onSelect) {
-      params.onSelect(pickedLat, pickedLng, pickedName);
+    if (params?.onSelect) {
+      params.onSelect(selectedLat, selectedLng, selectedName);
     }
-    window.dispatchEvent(new CustomEvent('navigate-back'));
+    window.history.back();
   });
-}
-
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-function escapeAttr(str) {
-  return (str || '').replace(/"/g, '&quot;');
 }
