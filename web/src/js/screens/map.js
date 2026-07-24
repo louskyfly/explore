@@ -1,6 +1,6 @@
 import { db } from '../db.js';
 import { getCurrentProfile } from './profileSelect.js';
-import { updateHeader, showToast, getCategoryById } from '../components.js';
+import { updateHeader, showToast, getCategoryById, getStatusById } from '../components.js';
 
 let map = null;
 let markers = [];
@@ -110,11 +110,11 @@ async function loadMarkers(profile) {
 
   withCoords.forEach(a => {
     const cat = getCategoryById(a.category);
-    const isDone = a.status === 'done';
+    const status = getStatusById(a.status);
 
     const icon = L.divIcon({
       className: '',
-      html: `<div class="custom-marker ${isDone ? 'done' : ''}" style="background:${cat.cssClass.includes('work') ? '#64D2FF' : cat.cssClass.includes('personal') ? '#30D158' : cat.cssClass.includes('health') ? '#FF453A' : cat.cssClass.includes('shopping') ? '#FF9F0A' : cat.cssClass.includes('family') ? '#BF5AF2' : '#8e8e93'}">
+      html: `<div class="custom-marker" style="background:${status.color};border:2px solid rgba(255,255,255,0.4);">
         <span>${cat.icon}</span>
       </div>`,
       iconSize: [36, 36],
@@ -122,15 +122,22 @@ async function loadMarkers(profile) {
     });
 
     const marker = L.marker([a.lat, a.lng], { icon }).addTo(map);
+    const popupImg = a.image ? `<img src="${a.image}" style="width:100%;height:100px;object-fit:cover;border-radius:10px 10px 0 0;">` : '';
     marker.bindPopup(`
       <div class="map-popup">
-        <div class="map-popup-title">${escapeHtml(a.title)}</div>
-        <div class="map-popup-desc">${cat.label}${a.date ? ' - ' + a.date : ''}</div>
-        <div class="map-popup-actions">
-          <button class="btn btn-sm btn-primary" onclick="window.dispatchEvent(new CustomEvent('navigate-detail',{detail:{id:'${a.id}'}}))">Voir</button>
+        ${popupImg}
+        <div style="padding:12px;">
+          <div class="map-popup-title">${escapeHtml(a.title)}</div>
+          <div style="display:flex;gap:6px;margin:6px 0;">
+            <span class="status-pill ${status.cssClass}" style="font-size:11px;">${status.icon} ${status.label}</span>
+            <span class="activity-category ${cat.cssClass}" style="font-size:11px;">${cat.label}</span>
+          </div>
+          <div class="map-popup-actions">
+            <button class="btn btn-sm btn-primary" onclick="window.dispatchEvent(new CustomEvent('navigate-detail',{detail:{id:'${a.id}'}}))">Voir</button>
+          </div>
         </div>
       </div>
-    `, { className: 'glass-popup' });
+    `, { className: 'glass-popup', maxWidth: 260 });
     markers.push(marker);
   });
 }

@@ -89,14 +89,28 @@ export function timeAgo(ts) {
 }
 
 export const CATEGORIES = [
-  { id: 'work', label: 'Travail', icon: '\uD83D\uDCBC', cssClass: 'cat-work' },
-  { id: 'personal', label: 'Personnel', icon: '\u2606', cssClass: 'cat-personal' },
-  { id: 'health', label: 'Sante', icon: '\u2764', cssClass: 'cat-health' },
-  { id: 'shopping', label: 'Courses', icon: '\uD83D\uDED2', cssClass: 'cat-shopping' },
-  { id: 'family', label: 'Famille', icon: '\uD83C\uDFE0', cssClass: 'cat-family' },
+  { id: 'monument', label: 'Monument', icon: '\uD83C\uDFDB', cssClass: 'cat-monument' },
+  { id: 'nature', label: 'Nature', icon: '\uD83C\uDF33', cssClass: 'cat-nature' },
+  { id: 'restaurant', label: 'Restaurant', icon: '\uD83C\uDF5D', cssClass: 'cat-restaurant' },
+  { id: 'museum', label: 'Musee', icon: '\uD83C\uDFAD', cssClass: 'cat-museum' },
+  { id: 'activity', label: 'Activite', icon: '\u26A1', cssClass: 'cat-activity' },
+  { id: 'shopping', label: 'Shopping', icon: '\uD83D\uDECD', cssClass: 'cat-shopping' },
+  { id: 'event', label: 'Evenement', icon: '\uD83C\uDFA8', cssClass: 'cat-event' },
   { id: 'other', label: 'Autre', icon: '\u2726', cssClass: 'cat-other' }
 ];
 
+export const STATUSES = [
+  { id: 'todo', label: 'A faire', icon: '\uD83D\uDCCB', color: '#64D2FF', cssClass: 'status-todo' },
+  { id: 'reserved', label: 'Reserve', icon: '\uD83D\uDCC5', color: '#FF9F0A', cssClass: 'status-reserved' },
+  { id: 'in_progress', label: 'En cours', icon: '\u23F3', color: '#BF5AF2', cssClass: 'status-in-progress' },
+  { id: 'done', label: 'Fait', icon: '\u2705', color: '#30D158', cssClass: 'status-done' },
+  { id: 'cancelled', label: 'Annule', icon: '\u274C', color: '#FF453A', cssClass: 'status-cancelled' }
+];
+
 export function getCategoryById(id) {
-  return CATEGORIES.find(c => c.id === id) || CATEGORIES[5];
+  return CATEGORIES.find(c => c.id === id) || CATEGORIES[7];
+}
+
+export function getStatusById(id) {
+  return STATUSES.find(s => s.id === id) || STATUSES[0];
 }

@@ -1,12 +1,6 @@
-import { db, genId } from '../db.js';
+import { db } from '../db.js';
 import { getCurrentProfile } from './profileSelect.js';
-import { updateHeader, showModal, showToast, getCategoryById, formatDate, timeAgo } from '../components.js';
-
-const STATUS_FILTERS = [
-  { id: 'all', label: 'Toutes' },
-  { id: 'pending', label: 'A faire' },
-  { id: 'done', label: 'Terminees' }
-];
+import { updateHeader, showToast, getCategoryById, getStatusById, STATUSES, formatDate } from '../components.js';
 
 export async function renderHome(container) {
   const profile = getCurrentProfile();
@@ -17,24 +11,18 @@ export async function renderHome(container) {
   const activities = (await db.getActivitiesByProfile(profile))
     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-  const total = activities.length;
-  const done = activities.filter(a => a.status === 'done').length;
-  const pending = total - done;
-
   container.innerHTML = `
     <div class="page">
       <div class="home-hero animate-in">
         <h2>Bonjour !</h2>
-        <p>${total} activit${total !== 1 ? 'es' : 'e'} au total</p>
+        <p>${activities.length} activit${activities.length !== 1 ? 'es' : 'e'}${activities.length > 0 ? ' au total' : ''}</p>
         <div class="hero-stats">
-          <div class="hero-stat">
-            <div class="hero-stat-value">${pending}</div>
-            <div class="hero-stat-label">A faire</div>
-          </div>
-          <div class="hero-stat">
-            <div class="hero-stat-value">${done}</div>
-            <div class="hero-stat-label">Terminees</div>
-          </div>
+          ${STATUSES.filter(s => s.id !== 'cancelled').map(s => `
+            <div class="hero-stat">
+              <div class="hero-stat-value">${activities.filter(a => a.status === s.id).length}</div>
+              <div class="hero-stat-label">${s.label}</div>
+            </div>
+          `).join('')}
         </div>
       </div>
 
@@ -44,8 +32,9 @@ export async function renderHome(container) {
       </div>
 
       <div class="filter-chips animate-in stagger-2" id="filter-chips">
-        ${STATUS_FILTERS.map(f => `
-          <button class="filter-chip ${f.id === 'all' ? 'active' : ''}" data-filter="${f.id}">${f.label}</button>
+        <button class="filter-chip active" data-filter="all">Toutes</button>
+        ${STATUSES.map(s => `
+          <button class="filter-chip" data-filter="${s.id}">${s.icon} ${s.label}</button>
         `).join('')}
       </div>
 
@@ -71,7 +60,8 @@ export async function renderHome(container) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(a =>
         a.title.toLowerCase().includes(q) ||
-        (a.description && a.description.toLowerCase().includes(q))
+        (a.description && a.description.toLowerCase().includes(q)) ||
+        (a.locationName && a.locationName.toLowerCase().includes(q))
       );
     }
 
@@ -79,8 +69,8 @@ export async function renderHome(container) {
       list.innerHTML = `
         <div class="empty-state">
           <div class="empty-state-icon">${searchQuery ? '\uD83D\uDD0D' : '\uD83D\uDCCB'}</div>
-          <h3>${searchQuery ? 'Aucun resultat' : 'Aucune activite'}</h3>
-          <p>${searchQuery ? 'Essayez une autre recherche' : 'Appuyez sur + pour creer une activite'}</p>
+          <h3>${searchQuery ? 'Aucun resultat' : 'Rien pour le moment'}</h3>
+          <p>${searchQuery ? 'Essayez une autre recherche' : 'Appuyez sur + pour ajouter une activite'}</p>
         </div>
       `;
       return;
@@ -88,41 +78,26 @@ export async function renderHome(container) {
 
     list.innerHTML = filtered.map((a, i) => {
       const cat = getCategoryById(a.category);
+      const status = getStatusById(a.status);
       return `
         <div class="activity-card glass-card animate-in stagger-${Math.min(i + 1, 6)}" data-id="${a.id}">
-          <div class="activity-icon ${cat.cssClass}">${cat.icon}</div>
+          ${a.image ? `<img class="activity-card-image" src="${a.image}" alt="">` : `<div class="activity-icon ${cat.cssClass}" style="width:64px;height:64px;font-size:28px;">${cat.icon}</div>`}
           <div class="activity-info">
             <div class="activity-title">${escapeHtml(a.title)}</div>
             <div class="activity-meta">
+              <span class="status-pill ${status.cssClass}">${status.icon} ${status.label}</span>
               <span class="activity-category ${cat.cssClass}">${cat.label}</span>
-              ${a.date ? `<span class="activity-date">${formatDate(a.date)}</span>` : ''}
             </div>
+            ${a.date ? `<div class="activity-date">${formatDate(a.date)}</div>` : ''}
             ${a.locationName ? `<div class="activity-location">\uD83D\uDCCD ${escapeHtml(a.locationName)}</div>` : ''}
           </div>
-          <div class="activity-status ${a.status === 'done' ? 'done' : ''}" data-toggle="${a.id}"></div>
         </div>
       `;
     }).join('');
 
     list.querySelectorAll('.activity-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('.activity-status')) return;
+      card.addEventListener('click', () => {
         window.dispatchEvent(new CustomEvent('navigate-detail', { detail: { id: card.dataset.id } }));
-      });
-    });
-
-    list.querySelectorAll('.activity-status').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const id = btn.dataset.toggle;
-        const activity = activities.find(a => a.id === id);
-        if (activity) {
-          activity.status = activity.status === 'done' ? 'pending' : 'done';
-          activity.updatedAt = Date.now();
-          await db.addActivity(activity);
-          renderList();
-          showToast(activity.status === 'done' ? 'Activite terminee !' : 'Activite reactivee', 'success');
-        }
       });
     });
   }
