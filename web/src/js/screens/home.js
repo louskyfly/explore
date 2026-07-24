@@ -11,6 +11,10 @@ export async function renderHome(container) {
   const activities = await db.getActivities(profile);
   activities.sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
 
+  const allTags = await db.getSetting('all_tags') || [];
+  const usedTags = [...new Set(activities.flatMap(a => a.tags || []))].sort();
+  const tagsToShow = usedTags.length > 0 ? usedTags : allTags;
+
   container.innerHTML = `
     <div class="page">
       <div class="search-container">
@@ -18,8 +22,11 @@ export async function renderHome(container) {
       </div>
       <div class="filter-chips" id="filter-chips">
         <button class="filter-chip active" data-filter="all">Toutes</button>
-        ${STATUSES.map(s => `
-          <button class="filter-chip" data-filter="${s.id}">${s.icon} ${s.label}</button>
+        ${tagsToShow.map(t => `
+          <button class="filter-chip" data-filter="${t}" style="--chip-color:${getTagColor(t)}">
+            <span class="tag-dot" style="background:${getTagColor(t)}"></span>
+            ${t}
+          </button>
         `).join('')}
       </div>
       <div id="activities-list" class="activities-grid"></div>
@@ -37,7 +44,7 @@ export async function renderHome(container) {
     let filtered = activities;
 
     if (currentFilter !== 'all') {
-      filtered = filtered.filter(a => a.status === currentFilter);
+      filtered = filtered.filter(a => (a.tags || []).includes(currentFilter));
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
