@@ -2,6 +2,11 @@ import { db, genId } from '../db.js';
 import { getCurrentProfile } from './profileSelect.js';
 import { updateHeader, showToast, STATUSES, getStatusById, getTagColor } from '../components.js';
 
+let _pendingPickerData = null;
+
+export function setPendingPickerData(data) { _pendingPickerData = data; }
+export function getPendingPickerData() { const d = _pendingPickerData; _pendingPickerData = null; return d; }
+
 export async function renderCreateActivity(container, editingId) {
   const profile = getCurrentProfile();
   if (!profile) return;
@@ -10,15 +15,28 @@ export async function renderCreateActivity(container, editingId) {
 
   let activity = null;
   if (editingId) {
-    activity = await db.getActivity(editingId);
+    try { activity = await db.getActivity(editingId); } catch(e) {}
     if (!activity) {
-      showToast('Activite introuvable', 'error');
+      container.innerHTML = '<div class="page"><div class="empty-state"><div class="empty-state-icon">\u274C</div><p>Activite introuvable</p></div></div>';
       return;
     }
   }
 
-  const allTags = await db.getSetting('all_tags') || [];
+  let allTags = [];
+  try { allTags = await db.getSetting('all_tags') || []; } catch(e) {}
+
   let imageData = activity ? (activity.image || '') : '';
+  let tags = activity ? (activity.tags || []) : [];
+  let locationName = activity ? (activity.locationName || '') : '';
+  let lat = activity ? (activity.lat || null) : null;
+  let lng = activity ? (activity.lng || null) : null;
+
+  const pickerData = getPendingPickerData();
+  if (pickerData) {
+    lat = pickerData.lat;
+    lng = pickerData.lng;
+    locationName = pickerData.name || '';
+  }
 
   container.innerHTML = `
     <div class="page">
@@ -78,8 +96,8 @@ export async function renderCreateActivity(container, editingId) {
           <div class="location-picker-btn" id="btn-pick-location">
             <div class="location-picker-icon">\uD83D\uDCCD</div>
             <div class="location-picker-text">
-              <span id="act-location-display">${activity && activity.locationName ? escapeHtml(activity.locationName) : 'Choisir sur la carte'}</span>
-              <span class="location-picker-sub">${activity && activity.locationName ? 'Appuie pour modifier' : 'Chercher une adresse reelle'}</span>
+              <span id="act-location-display">${locationName ? escapeHtml(locationName) : 'Choisir sur la carte'}</span>
+              <span class="location-picker-sub">${locationName ? 'Appuie pour modifier' : 'Chercher une adresse reelle'}</span>
             </div>
           </div>
         </div>
@@ -98,11 +116,6 @@ export async function renderCreateActivity(container, editingId) {
       </form>
     </div>
   `;
-
-  let tags = activity ? (activity.tags || []) : [];
-  let locationName = activity ? (activity.locationName || '') : '';
-  let lat = activity ? (activity.lat || null) : null;
-  let lng = activity ? (activity.lng || null) : null;
 
   const tagsList = container.querySelector('#tags-list');
   const tagInput = container.querySelector('#tag-input');
@@ -125,18 +138,6 @@ export async function renderCreateActivity(container, editingId) {
   }
 
   renderTags();
-
-  if (window._pickerResult) {
-    lat = window._pickerResult.lat;
-    lng = window._pickerResult.lng;
-    locationName = window._pickerResult.name || '';
-    const display = container.querySelector('#act-location-display');
-    if (display) {
-      const short = locationName.split(',').slice(0, 2).join(',');
-      display.textContent = short || 'Lieu choisi';
-    }
-    window._pickerResult = null;
-  }
 
   tagInput.addEventListener('input', () => {
     const q = tagInput.value.trim().toLowerCase();
@@ -304,21 +305,18 @@ export async function renderCreateActivity(container, editingId) {
   container.querySelector('#btn-pick-location').addEventListener('click', () => {
     window.dispatchEvent(new CustomEvent('navigate-picker', {
       detail: {
+        editingId: editingId || null,
         lat,
         lng,
-        onSelect: (newLat, newLng, name) => {
-          lat = newLat;
-          lng = newLng;
-          locationName = name || '';
-          const display = container.querySelector('#act-location-display');
-          if (display) {
-            const short = locationName.split(',').slice(0, 2).join(',');
-            display.textContent = short || 'Lieu choisi';
-          }
-        }
+        tagsSnapshot: [...tags],
+        imageDataSnapshot: imageData
       }
     }));
   });
+}
+
+export function getPickerParamsFromCreate(container) {
+  return {};
 }
 
 function showConfirmModal(title, message, onConfirm) {

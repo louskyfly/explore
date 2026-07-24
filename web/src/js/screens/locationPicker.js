@@ -1,7 +1,18 @@
 import { updateHeader, showToast } from '../components.js';
+import { setPendingPickerData } from './createActivity.js';
+
+let _pickerMap = null;
+
+function destroyPickerMap() {
+  if (_pickerMap) {
+    try { _pickerMap.remove(); } catch(e) {}
+    _pickerMap = null;
+  }
+}
 
 export function renderLocationPicker(container, params) {
   updateHeader('Choisir un lieu');
+  destroyPickerMap();
 
   const initialLat = params?.lat || 46.6;
   const initialLng = params?.lng || 1.8;
@@ -28,18 +39,18 @@ export function renderLocationPicker(container, params) {
   let selectedLng = initialLng;
   let selectedName = '';
 
-  const map = L.map('picker-map', { zoomControl: false }).setView([initialLat, initialLng], 13);
-  L.control.zoom({ position: 'topright' }).addTo(map);
+  _pickerMap = L.map('picker-map', { zoomControl: false }).setView([initialLat, initialLng], 13);
+  L.control.zoom({ position: 'topright' }).addTo(_pickerMap);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
+  }).addTo(_pickerMap);
 
-  setTimeout(() => map.invalidateSize(), 100);
+  setTimeout(() => _pickerMap.invalidateSize(), 100);
 
   if (params?.lat && params?.lng) {
     marker = L.circleMarker([params.lat, params.lng], {
       radius: 10, fillColor: '#EC407A', color: '#fff', weight: 3, fillOpacity: 0.9
-    }).addTo(map);
+    }).addTo(_pickerMap);
     reverseGeocode(params.lat, params.lng);
   }
 
@@ -52,10 +63,12 @@ export function renderLocationPicker(container, params) {
       const data = await res.json();
       selectedName = data.display_name || '';
       const short = shortenAddress(data);
-      document.getElementById('picker-address').textContent = short || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      const addr = document.getElementById('picker-address');
+      if (addr) addr.textContent = short || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
     } catch {
       selectedName = '';
-      document.getElementById('picker-address').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      const addr = document.getElementById('picker-address');
+      if (addr) addr.textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
     }
   }
 
@@ -82,13 +95,13 @@ export function renderLocationPicker(container, params) {
     } else {
       marker = L.circleMarker([lat, lng], {
         radius: 10, fillColor: '#EC407A', color: '#fff', weight: 3, fillOpacity: 0.9
-      }).addTo(map);
+      }).addTo(_pickerMap);
     }
-    map.setView([lat, lng], Math.max(map.getZoom(), 15));
+    _pickerMap.setView([lat, lng], Math.max(_pickerMap.getZoom(), 15));
     reverseGeocode(lat, lng);
   }
 
-  map.on('click', (e) => {
+  _pickerMap.on('click', (e) => {
     placeMarker(e.latlng.lat, e.latlng.lng);
   });
 
@@ -158,9 +171,8 @@ export function renderLocationPicker(container, params) {
   });
 
   container.querySelector('#picker-confirm').addEventListener('click', () => {
-    if (params?.onSelect) {
-      params.onSelect(selectedLat, selectedLng, selectedName);
-    }
+    destroyPickerMap();
+    setPendingPickerData({ lat: selectedLat, lng: selectedLng, name: selectedName });
     window.dispatchEvent(new CustomEvent('navigate-back'));
   });
 }

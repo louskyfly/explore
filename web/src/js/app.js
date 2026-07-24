@@ -141,14 +141,8 @@ export async function initApp() {
   });
 
   window.addEventListener('navigate-picker', async (e) => {
-    window._pickerResult = null;
     const params = e.detail;
-    const origOnSelect = params.onSelect;
-    params.onSelect = (lat, lng, name) => {
-      window._pickerResult = { lat, lng, name };
-      if (origOnSelect) origOnSelect(lat, lng, name);
-    };
-    pushScreen(renderCreateActivity);
+    pushScreen(renderCreateActivity, params.editingId || null);
     const container = document.getElementById('page-container');
     container.innerHTML = '';
     try { await renderLocationPicker(container, params); } catch(e) { console.error(e); }
