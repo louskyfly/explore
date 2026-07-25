@@ -1,6 +1,6 @@
-const CACHE_NAME = 'photomap-v3';
+const CACHE_NAME = 'photomap-v4';
 const TILE_CACHE = 'tiles-v2';
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 
 self.addEventListener('message', e => {
   if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
@@ -65,6 +65,11 @@ self.addEventListener('fetch', e => {
         })
       )
     );
+    return;
+  }
+
+  if (url.pathname.includes('master.html')) {
+    e.respondWith(fetch(e.request));
     return;
   }
 
