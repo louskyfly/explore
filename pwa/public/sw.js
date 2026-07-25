@@ -1,5 +1,10 @@
-const CACHE_NAME = 'photomap-v1';
-const TILE_CACHE = 'tiles-v1';
+const CACHE_NAME = 'photomap-v3';
+const TILE_CACHE = 'tiles-v2';
+const APP_VERSION = '1.1.0';
+
+self.addEventListener('message', e => {
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -21,6 +26,10 @@ self.addEventListener('activate', e => {
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME && k !== TILE_CACHE).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
+    .then(() => self.clients.matchAll({ type: 'window' }))
+    .then(clients => {
+      clients.forEach(c => c.postMessage({ type: 'SW_UPDATED', version: APP_VERSION }));
+    })
   );
 });
 

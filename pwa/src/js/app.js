@@ -12,6 +12,7 @@ import { renderStats } from './screens/stats.js';
 import { renderAchievements, checkAchievements } from './screens/achievements.js';
 import { renderHistory } from './screens/history.js';
 import { renderSettings } from './screens/settings.js';
+import { renderDirectory } from './screens/directory.js';
 
 const screenRenderers = {
   home: renderHome,
@@ -23,7 +24,8 @@ const screenRenderers = {
   stats: renderStats,
   achievements: renderAchievements,
   history: renderHistory,
-  settings: renderSettings
+  settings: renderSettings,
+  directory: renderDirectory
 };
 
 export async function initApp() {
@@ -74,6 +76,17 @@ export async function initApp() {
   }
 
   if ('serviceWorker' in navigator) {
-    try { await navigator.serviceWorker.register('/sw.js'); } catch (e) {}
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      navigator.serviceWorker.addEventListener('message', e => {
+        if (e.data?.type === 'SW_UPDATED') {
+          showToast(`📦 Mise à jour disponible (v${e.data.version})`, 'info', 5000);
+          setTimeout(() => window.location.reload(), 2000);
+        }
+      });
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    } catch (e) {}
   }
 }

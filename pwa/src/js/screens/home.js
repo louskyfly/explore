@@ -58,6 +58,10 @@ export async function renderHome(container) {
           <div class="quick-action-icon" style="background:rgba(48,209,88,0.15)">🖼️</div>
           <span class="quick-action-label">Galerie</span>
         </button>
+        <button class="quick-action" data-action="directory">
+          <div class="quick-action-icon" style="background:rgba(156,39,176,0.15)">📋</div>
+          <span class="quick-action-label">Annuaire</span>
+        </button>
       </div>
 
       <div class="section-title animate-in stagger-3">Villes</div>
