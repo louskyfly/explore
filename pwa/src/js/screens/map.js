@@ -59,7 +59,9 @@ function buildGoogleMapsRouteUrl(steps) {
 
 async function loadCompletedPois() {
   const photos = await db.getAllPhotos();
+  const progress = await db.getAllProgress();
   completedPoiIds = new Set(photos.map(p => p.poiId).filter(Boolean));
+  progress.filter(p => p.completed && p.poiId).forEach(p => completedPoiIds.add(p.poiId));
 }
 
 export function renderMap(container) {
@@ -372,7 +374,10 @@ function addMarker(poi, city, route = null) {
       <div style="padding:8px 10px 10px">
         <div style="font-size:13px;font-weight:700;margin-bottom:6px">${poi.name}</div>
         ${isCompleted ? '<div style="font-size:10px;color:var(--success);font-weight:600;margin-bottom:6px">✅ Complété</div>' : ''}
-        <a href="${navigateUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-sm map-nav-btn" style="width:100%">
+        <button class="btn btn-primary btn-sm map-validate-btn" data-poi-id="${poi.id}" style="width:100%;margin-bottom:6px">
+          📸 Valider le lieu
+        </button>
+        <a href="${navigateUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm map-nav-btn" style="width:100%">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3,11 22,2 13,21 11,13 3,11"/></svg>
           🧭 Naviguer
         </a>
@@ -381,6 +386,16 @@ function addMarker(poi, city, route = null) {
   `;
 
   marker.bindPopup(popupContent, { maxWidth: 220, className: 'glass-popup' });
+  marker.on('popupopen', () => {
+    const btn = document.querySelector(`.map-validate-btn[data-poi-id="${poi.id}"]`);
+    if (btn) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        map.closePopup();
+        startMapPhoto(poi, route);
+      });
+    }
+  });
   marker.poiData = poi;
   markers.push(marker);
 }
@@ -401,12 +416,28 @@ function startMapPhoto(poi, route) {
     <div id="challenge-score"></div>
   `;
 
-  showModal(`📸 ${poi.name}`, content, []);
+  const { close } = showModal(`📸 ${poi.name}`, content, []);
 
-  setTimeout(() => initCameraForPoi(poi, route), 100);
+  const cleanup = () => {
+    const video = document.getElementById('camera-video');
+    if (video?.srcObject) {
+      video.srcObject.getTracks().forEach(t => t.stop());
+      video.srcObject = null;
+    }
+  };
+
+  const origClose = close;
+  const wrappedClose = () => { cleanup(); origClose(); };
+
+  const backdrop = document.querySelector('.modal-backdrop');
+  const closeBtn = document.querySelector('.modal-close');
+  if (backdrop) backdrop.onclick = wrappedClose;
+  if (closeBtn) closeBtn.onclick = wrappedClose;
+
+  setTimeout(() => initCameraForPoi(poi, route, cleanup), 100);
 }
 
-async function initCameraForPoi(poi, route) {
+async function initCameraForPoi(poi, route, cleanup) {
   const video = document.getElementById('camera-video');
   const canvas = document.getElementById('camera-canvas');
   const fileInput = document.getElementById('file-input');
@@ -449,6 +480,7 @@ async function initCameraForPoi(poi, route) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video, 0, 0);
+      if (cleanup) cleanup();
       processMapPhoto(canvas.toDataURL('image/jpeg', 0.9), poi, route, resultDiv, scoreDiv);
     }
   });
@@ -500,7 +532,7 @@ async function processMapPhoto(photoData, poi, route, resultDiv, scoreDiv) {
           </div>
           <div style="font-size:20px;color:var(--text-tertiary)">↔</div>
           <div style="flex:1;text-align:center">
-            <img src="${poi.image}" crossorigin="anonymous" referrerpolicy="no-referrer" style="width:100%;height:60px;object-fit:cover;border-radius:8px;background:var(--card-bg)" alt="Référence" onerror="this.style.background='linear-gradient(135deg,var(--accent),var(--accent-light))';this.style.display='flex';this.style.alignItems='center';this.style.justifyContent='center'">>
+            <img src="${poi.image}" crossorigin="anonymous" referrerpolicy="no-referrer" style="width:100%;height:60px;object-fit:cover;border-radius:8px;background:var(--card-bg)" alt="Référence" onerror="this.style.background='linear-gradient(135deg,var(--accent),var(--accent-light))';this.style.display='flex';this.style.alignItems='center';this.style.justifyContent='center'">
             <div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">Référence</div>
           </div>
         </div>

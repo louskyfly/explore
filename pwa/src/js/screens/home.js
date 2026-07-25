@@ -3,7 +3,7 @@ import { zaragoza } from '../data/zaragoza.js';
 import { db } from '../db.js';
 import { updateHeader } from '../components.js';
 
-const cities = [bilbao, zaragoza];
+export const cities = [bilbao, zaragoza];
 
 export async function renderHome(container) {
   updateHeader('PhotoMap');

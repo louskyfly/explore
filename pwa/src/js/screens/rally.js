@@ -318,11 +318,14 @@ async function processPhoto(photoData, challenge, route, stepId, resultDiv, scor
     });
 
     document.getElementById('btn-save-challenge')?.addEventListener('click', async () => {
+      const poi = route.steps.find(s => s.id === stepId);
       const photo = {
         id: genId(),
         routeId: route.id,
         stepId,
         challengeId: challenge.id,
+        poiId: poi?.poiId || '',
+        poiName: poi?.name || '',
         data: photoData,
         score: result.score,
         points,
