@@ -109,5 +109,3 @@ export async function renderHome(container) {
 function createProgressBar(pct) {
   return `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`;
 }
-
-export { cities };
