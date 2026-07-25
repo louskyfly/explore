@@ -417,6 +417,21 @@
 
     function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 9); }
 
+    function generateJoinUrl(team) {
+      const data = btoa(unescape(encodeURIComponent(JSON.stringify({ n: team.name, c: team.color, e: team.emoji }))));
+      return location.origin + location.pathname.replace('master.html', 'index.html') + '?join=' + data;
+    }
+
+    function copyJoinUrl(team) {
+      const url = generateJoinUrl(team);
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.querySelector('[data-action="copy-link"][data-team="' + team.id + '"]');
+        if (btn) { btn.textContent = '✓ Copié !'; setTimeout(() => { btn.textContent = '📋 Lien'; }, 2000); }
+      }).catch(() => {
+        prompt('Copie ce lien :', url);
+      });
+    }
+
     const TEAM_COLORS = ['#173B7A','#FF453A','#30D158','#FF9F0A','#AF52DE','#FF2D55','#5AC8FA','#FFD60A'];
     const TEAM_EMOJIS = ['🐺','🦁','🦅','🐬','🦊','🐻','🐙','🦋'];
 
@@ -484,7 +499,14 @@
             '<button class="gm-btn gm-btn-success" data-action="force-validate" data-team="' + team.id + '">✓ Valider POI</button>' +
             '<button class="gm-btn gm-btn-warning" data-action="edit-team" data-team="' + team.id + '">✏️ Éditer</button>' +
             '<button class="gm-btn gm-btn-danger" data-action="reset-team" data-team="' + team.id + '">↺ Reset</button>' +
-            '</div></div>';
+            '</div>' +
+            '<div style="margin-top:10px;padding:10px;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);border-radius:10px;">' +
+            '<p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;">🔗 Lien d\'invitation pour les joueurs :</p>' +
+            '<div style="display:flex;gap:6px;align-items:center;">' +
+            '<button class="gm-btn gm-btn-success" data-action="copy-link" data-team="' + team.id + '" style="flex:1;">📋 Copier le lien</button>' +
+            '<button class="gm-btn" data-action="show-qr" data-team="' + team.id + '">📱 QR</button>' +
+            '</div></div>' +
+            '</div>';
         }
       }
       html += '</div>';
@@ -612,6 +634,26 @@
           const team = await dbGet('teams', btn.dataset.team);
           if (team) { team.score = 0; await dbPut('teams', team); }
           renderTab('teams');
+        });
+      });
+      document.querySelectorAll('[data-action="copy-link"]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const team = await dbGet('teams', btn.dataset.team);
+          if (team) copyJoinUrl(team);
+        });
+      });
+      document.querySelectorAll('[data-action="show-qr"]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const team = await dbGet('teams', btn.dataset.team);
+          if (!team) return;
+          const url = generateJoinUrl(team);
+          const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
+          showModal(
+            '<h2>QR Code — ' + team.name + '</h2>' +
+            '<div style="text-align:center;margin:16px 0;"><img src="' + qrUrl + '" alt="QR Code" style="width:250px;height:250px;border-radius:12px;background:#fff;padding:8px;"></div>' +
+            '<p style="font-size:12px;color:var(--text-secondary);text-align:center;">Le joueur scanne ce code pour rejoindre l\'équipe</p>' +
+            '<div class="gm-modal-actions"><button class="gm-btn gm-btn-primary" onclick="this.closest(\'.gm-modal-overlay\').remove()">Fermer</button></div>'
+          );
         });
       });
     }
