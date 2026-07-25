@@ -313,6 +313,10 @@
   </div>
 
   <script>
+    window.onerror = function(msg, url, line, col, err) {
+      document.body.innerHTML = '<div style="padding:20px;color:#fff;background:#000;font-family:monospace;"><h2>Erreur JS</h2><pre>' + msg + '\n' + url + ':' + line + '</pre></div>';
+    };
+
     const DB_NAME = 'explore_pwa';
     const DB_VERSION = 1;
     const DEFAULT_PIN = '2024';
@@ -322,25 +326,29 @@
     // ─── IndexedDB ───
     function openDB() {
       return new Promise((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME, DB_VERSION);
-        req.onupgradeneeded = e => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
-          if (!db.objectStoreNames.contains('photos')) {
-            const ps = db.createObjectStore('photos', { keyPath: 'id' });
-            ps.createIndex('teamId', 'teamId', { unique: false });
-          }
-          if (!db.objectStoreNames.contains('progress')) {
-            const pg = db.createObjectStore('progress', { keyPath: 'id' });
-            pg.createIndex('city', 'city', { unique: false });
-          }
-          if (!db.objectStoreNames.contains('teams')) db.createObjectStore('teams', { keyPath: 'id' });
-          if (!db.objectStoreNames.contains('challenges')) db.createObjectStore('challenges', { keyPath: 'id' });
-          if (!db.objectStoreNames.contains('history')) db.createObjectStore('history', { keyPath: 'id' });
-          if (!db.objectStoreNames.contains('achievements')) db.createObjectStore('achievements', { keyPath: 'id' });
-        };
-        req.onsuccess = e => { dbInst = e.target.result; resolve(dbInst); };
-        req.onerror = e => reject(e.target.error);
+        try {
+          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
+            if (!db.objectStoreNames.contains('photos')) {
+              const ps = db.createObjectStore('photos', { keyPath: 'id' });
+              ps.createIndex('teamId', 'teamId', { unique: false });
+            }
+            if (!db.objectStoreNames.contains('progress')) {
+              const pg = db.createObjectStore('progress', { keyPath: 'id' });
+              pg.createIndex('city', 'city', { unique: false });
+            }
+            if (!db.objectStoreNames.contains('teams')) db.createObjectStore('teams', { keyPath: 'id' });
+            if (!db.objectStoreNames.contains('challenges')) db.createObjectStore('challenges', { keyPath: 'id' });
+            if (!db.objectStoreNames.contains('history')) db.createObjectStore('history', { keyPath: 'id' });
+            if (!db.objectStoreNames.contains('achievements')) db.createObjectStore('achievements', { keyPath: 'id' });
+          };
+          req.onsuccess = e => { dbInst = e.target.result; resolve(dbInst); };
+          req.onerror = e => reject(e.target.error);
+        } catch(e) {
+          reject(e);
+        }
       });
     }
 
@@ -370,17 +378,11 @@
     // ─── PIN ───
     let currentPin = DEFAULT_PIN;
 
-    async function loadPin() {
-      try {
-        await openDB();
-        const stored = await db.getSetting('gm_pin');
+    try {
+      openDB().then(() => db.getSetting('gm_pin')).then(stored => {
         if (stored) currentPin = stored;
-      } catch (e) {
-        currentPin = DEFAULT_PIN;
-      }
-    }
-
-    loadPin();
+      }).catch(() => {});
+    } catch(e) {}
 
     document.querySelectorAll('.pin-key').forEach(key => {
       key.addEventListener('click', () => {
