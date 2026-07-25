@@ -368,18 +368,22 @@
     };
 
     // ─── PIN ───
-    async function getPin() {
-      const stored = await db.getSetting('gm_pin');
-      return stored || DEFAULT_PIN;
+    let currentPin = DEFAULT_PIN;
+
+    async function loadPin() {
+      try {
+        await openDB();
+        const stored = await db.getSetting('gm_pin');
+        if (stored) currentPin = stored;
+      } catch (e) {
+        currentPin = DEFAULT_PIN;
+      }
     }
 
-    async function checkPin(code) {
-      const correct = await getPin();
-      return code === correct;
-    }
+    loadPin();
 
     document.querySelectorAll('.pin-key').forEach(key => {
-      key.addEventListener('click', async () => {
+      key.addEventListener('click', () => {
         const val = key.dataset.key;
         if (val === 'del') {
           pinCode = pinCode.slice(0, -1);
@@ -388,7 +392,7 @@
         }
         updateDots();
         if (pinCode.length === 4) {
-          if (await checkPin(pinCode)) {
+          if (pinCode === currentPin) {
             document.getElementById('pin-screen').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('hidden');
             initDashboard();
@@ -1006,7 +1010,7 @@
       const confirm = document.getElementById('confirm-pin').value;
       const msg = document.getElementById('pin-msg');
 
-      if (current !== await getPin()) {
+      if (current !== currentPin) {
         msg.innerHTML = '<span style="color:var(--danger);">PIN actuel incorrect</span>';
         return;
       }
@@ -1020,6 +1024,7 @@
       }
 
       await db.setSetting('gm_pin', newPin);
+      currentPin = newPin;
       msg.innerHTML = '<span style="color:var(--success);">✓ PIN changé avec succès !</span>';
       document.getElementById('current-pin').value = '';
       document.getElementById('new-pin').value = '';
