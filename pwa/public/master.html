@@ -27,14 +27,11 @@
       --border: rgba(255, 255, 255, 0.08);
       --glass-bg: rgba(30, 30, 50, 0.55);
       --glass-border: rgba(255, 255, 255, 0.1);
-      --glass-highlight: rgba(255, 255, 255, 0.06);
       --card-bg: rgba(30, 30, 50, 0.5);
       --card-border: rgba(255, 255, 255, 0.08);
       --input-bg: rgba(255, 255, 255, 0.06);
-      --badge-bg: rgba(23, 59, 122, 0.3);
       --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
       --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
-      --ripple: rgba(255, 255, 255, 0.1);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -59,19 +56,12 @@
 
     /* PIN Screen */
     .pin-screen {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
       background: linear-gradient(135deg, #0a0a1a 0%, #173B7A 100%);
       z-index: 9999;
     }
-    .pin-box {
-      text-align: center;
-      width: 320px;
-      max-width: 90vw;
-    }
+    .pin-box { text-align: center; width: 320px; max-width: 90vw; }
     .pin-icon { font-size: 64px; margin-bottom: 16px; }
     .pin-box h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
     .pin-box p { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 24px; }
@@ -84,25 +74,16 @@
     .pin-dot.filled { background: #fff; border-color: #fff; }
     .pin-error { color: var(--danger); font-size: 13px; margin-top: 12px; min-height: 20px; }
     .pin-pad {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      max-width: 240px;
-      margin: 0 auto;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      max-width: 240px; margin: 0 auto;
     }
     .pin-key {
-      width: 64px; height: 64px;
-      border-radius: 50%;
+      width: 64px; height: 64px; border-radius: 50%;
       border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-      font-size: 24px; font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto;
-      transition: all 0.15s;
+      background: rgba(255,255,255,0.08); color: #fff;
+      font-size: 24px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto; transition: all 0.15s;
       backdrop-filter: blur(10px);
     }
     .pin-key:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
@@ -111,158 +92,97 @@
 
     /* Dashboard */
     .gm-header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      padding: 16px;
-      padding-top: calc(16px + env(safe-area-inset-top, 0px));
-      background: var(--bg-primary);
-      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      padding: 16px; padding-top: calc(16px + env(safe-area-inset-top, 0px));
+      background: var(--bg-primary); border-bottom: 1px solid var(--border);
     }
+    .gm-header-row { display: flex; align-items: center; justify-content: space-between; }
     .gm-header h1 { font-size: 20px; font-weight: 700; }
     .gm-header p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
     .gm-content {
-      flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 16px;
-      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 16px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
 
     .gm-section { margin-bottom: 24px; }
     .gm-section-title {
-      font-size: 16px; font-weight: 700;
-      margin-bottom: 12px;
+      font-size: 16px; font-weight: 700; margin-bottom: 12px;
       display: flex; align-items: center; gap: 8px;
     }
 
     .gm-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 10px;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 14px; margin-bottom: 10px;
       backdrop-filter: blur(16px);
     }
 
-    .gm-team-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
+    .gm-team-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
     .gm-team-avatar {
-      width: 44px; height: 44px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      flex-shrink: 0;
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
     }
     .gm-team-info { flex: 1; }
     .gm-team-info h3 { font-size: 16px; font-weight: 600; }
     .gm-team-info p { font-size: 12px; color: var(--text-secondary); }
     .gm-team-score {
-      font-size: 22px;
-      font-weight: 800;
+      font-size: 22px; font-weight: 800;
       background: linear-gradient(135deg, var(--accent), #64D2FF);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .gm-team-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
     .gm-btn {
-      padding: 8px 14px;
-      border-radius: 10px;
+      padding: 8px 14px; border-radius: 10px;
       border: 1px solid var(--card-border);
-      background: var(--card-bg);
-      color: var(--text-primary);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
+      background: var(--card-bg); color: var(--text-primary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s; display: inline-flex;
+      align-items: center; gap: 4px;
     }
     .gm-btn:active { transform: scale(0.95); }
     .gm-btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
     .gm-btn-danger { background: rgba(255,69,58,0.15); color: var(--danger); border-color: rgba(255,69,58,0.3); }
     .gm-btn-success { background: rgba(48,209,88,0.15); color: var(--success); border-color: rgba(48,209,88,0.3); }
+    .gm-btn-warning { background: rgba(255,159,10,0.15); color: var(--warning); border-color: rgba(255,159,10,0.3); }
+    .gm-btn-full { width: 100%; justify-content: center; padding: 14px; font-size: 14px; }
 
-    .gm-stat-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
+    .gm-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .gm-stat-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 14px;
-      text-align: center;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 12px; padding: 14px; text-align: center;
     }
     .gm-stat-value {
-      font-size: 28px;
-      font-weight: 800;
+      font-size: 28px; font-weight: 800;
       background: linear-gradient(135deg, var(--accent), #64D2FF);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .gm-stat-label {
-      font-size: 11px;
-      color: var(--text-secondary);
-      margin-top: 2px;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
+      font-size: 11px; color: var(--text-secondary); margin-top: 2px;
+      text-transform: uppercase; letter-spacing: 0.3px;
     }
 
-    .gm-photo-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 4px;
-    }
+    .gm-photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
     .gm-photo-item {
-      aspect-ratio: 1;
-      border-radius: 8px;
-      overflow: hidden;
-      position: relative;
-      cursor: pointer;
+      aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+      position: relative; cursor: pointer;
     }
-    .gm-photo-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    .gm-photo-item img { width: 100%; height: 100%; object-fit: cover; }
     .gm-photo-score {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 4px 6px;
-      background: linear-gradient(transparent, rgba(0,0,0,0.8));
-      color: #fff;
-      font-size: 10px;
-      font-weight: 700;
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 4px 6px; background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      color: #fff; font-size: 10px; font-weight: 700;
     }
 
     .gm-ach-card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
     }
     .gm-ach-icon {
-      width: 40px; height: 40px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      flex-shrink: 0;
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
     }
     .gm-ach-info { flex: 1; }
     .gm-ach-info h4 { font-size: 14px; font-weight: 600; }
@@ -273,99 +193,75 @@
 
     /* Modal overlay */
     .gm-modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 500;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: fixed; inset: 0; z-index: 500;
+      display: flex; align-items: center; justify-content: center;
       background: rgba(0,0,0,0.6);
     }
     .gm-modal {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      width: 90vw;
-      max-width: 400px;
-      max-height: 80vh;
-      overflow-y: auto;
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; width: 90vw;
+      max-width: 400px; max-height: 80vh; overflow-y: auto;
     }
     .gm-modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
     .gm-modal-actions { display: flex; gap: 8px; margin-top: 16px; }
     .gm-modal-actions .gm-btn { flex: 1; justify-content: center; padding: 12px; }
 
     .gm-select {
-      width: 100%;
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--input-bg);
-      color: var(--text-primary);
-      font-size: 14px;
-      font-family: inherit;
-      outline: none;
-      appearance: none;
-      -webkit-appearance: none;
+      width: 100%; padding: 10px 14px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--input-bg);
+      color: var(--text-primary); font-size: 14px; font-family: inherit;
+      outline: none; appearance: none; -webkit-appearance: none;
     }
     .gm-select option { background: #1c1c2e; color: #fff; }
 
     .gm-input {
-      width: 100%;
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--input-bg);
-      color: var(--text-primary);
-      font-size: 16px;
-      font-family: inherit;
+      width: 100%; padding: 10px 14px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--input-bg);
+      color: var(--text-primary); font-size: 16px; font-family: inherit;
       outline: none;
     }
     .gm-input:focus { border-color: var(--accent); }
 
+    .gm-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; display: block; }
+    .gm-form-group { margin-bottom: 14px; }
+
     .gm-footer {
-      text-align: center;
-      padding: 24px 16px;
+      text-align: center; padding: 24px 16px;
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
-    .gm-footer a {
-      color: var(--accent-light);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-    }
-    .gm-empty {
-      text-align: center;
-      padding: 40px;
-      color: var(--text-tertiary);
-    }
+    .gm-footer a { color: var(--accent-light); text-decoration: none; font-size: 14px; font-weight: 500; }
+    .gm-empty { text-align: center; padding: 40px; color: var(--text-tertiary); }
 
     .gm-tab-bar {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 16px;
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 4px;
-      border: 1px solid var(--card-border);
+      display: flex; gap: 4px; margin-bottom: 16px;
+      background: var(--card-bg); border-radius: 12px; padding: 4px;
+      border: 1px solid var(--card-border); flex-wrap: wrap;
     }
     .gm-tab {
-      flex: 1;
-      padding: 8px;
-      border-radius: 10px;
-      border: none;
-      background: transparent;
-      color: var(--text-secondary);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.2s;
+      flex: 1; min-width: 60px; padding: 8px; border-radius: 10px;
+      border: none; background: transparent; color: var(--text-secondary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      text-align: center; transition: all 0.2s;
     }
-    .gm-tab.active {
-      background: var(--accent);
-      color: #fff;
+    .gm-tab.active { background: var(--accent); color: #fff; }
+
+    .gm-poi-row {
+      display: flex; align-items: center; gap: 10px; padding: 8px 0;
+      border-bottom: 1px solid var(--border);
     }
+    .gm-poi-row:last-child { border-bottom: none; }
+    .gm-poi-icon { font-size: 18px; width: 28px; text-align: center; }
+    .gm-poi-name { flex: 1; font-size: 13px; }
+    .gm-poi-status { font-size: 11px; font-weight: 600; }
+    .gm-poi-status.done { color: var(--success); }
+    .gm-poi-status.pending { color: var(--text-tertiary); }
+
+    .gm-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+    }
+    .gm-badge-info { background: rgba(100,210,255,0.15); color: var(--info); }
+    .gm-badge-success { background: rgba(48,209,88,0.15); color: var(--success); }
   </style>
 </head>
 <body>
@@ -401,8 +297,13 @@
 
     <div id="dashboard" class="hidden" style="display:flex;flex-direction:column;height:100%;">
       <div class="gm-header">
-        <h1>🎛️ Game Master</h1>
-        <p>Panel d'administration</p>
+        <div class="gm-header-row">
+          <div>
+            <h1>🎛️ Game Master</h1>
+            <p>Panel d'administration</p>
+          </div>
+          <button class="gm-btn gm-btn-danger" onclick="logout()">⏻ Quitter</button>
+        </div>
       </div>
       <div class="gm-content" id="gm-content"></div>
       <div class="gm-footer">
@@ -412,44 +313,13 @@
   </div>
 
   <script>
-    const CORRECT_PIN = '2024';
-    let pinCode = '';
-
-    document.querySelectorAll('.pin-key').forEach(key => {
-      key.addEventListener('click', () => {
-        const val = key.dataset.key;
-        if (val === 'del') {
-          pinCode = pinCode.slice(0, -1);
-        } else if (val && pinCode.length < 4) {
-          pinCode += val;
-        }
-        updateDots();
-        if (pinCode.length === 4) {
-          if (pinCode === CORRECT_PIN) {
-            document.getElementById('pin-screen').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            initDashboard();
-          } else {
-            document.getElementById('pin-error').textContent = 'Code incorrect';
-            pinCode = '';
-            updateDots();
-            setTimeout(() => { document.getElementById('pin-error').textContent = ''; }, 1500);
-          }
-        }
-      });
-    });
-
-    function updateDots() {
-      for (let i = 0; i < 4; i++) {
-        document.getElementById('dot' + i).classList.toggle('filled', i < pinCode.length);
-      }
-    }
-
-    // ─── IndexedDB ───
     const DB_NAME = 'explore_pwa';
     const DB_VERSION = 1;
+    const DEFAULT_PIN = '2024';
+    let pinCode = '';
     let dbInst = null;
 
+    // ─── IndexedDB ───
     function openDB() {
       return new Promise((resolve, reject) => {
         const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -487,9 +357,65 @@
       async get(s, id) { return promisify(await tx(s)).then(r => promisify(r.get(id))); },
       async put(s, val) { return promisify(await tx(s, 'readwrite')).then(r => promisify(r.put(val))); },
       async del(s, id) { return promisify(await tx(s, 'readwrite')).then(r => promisify(r.delete(id))); },
+      async getSetting(key) {
+        const all = await this.getAll('settings');
+        const found = all.find(s => s.key === key);
+        return found ? found.value : null;
+      },
+      async setSetting(key, value) {
+        return this.put('settings', { key, value });
+      }
     };
 
-    // ─── POI Data (inline) ───
+    // ─── PIN ───
+    async function getPin() {
+      const stored = await db.getSetting('gm_pin');
+      return stored || DEFAULT_PIN;
+    }
+
+    async function checkPin(code) {
+      const correct = await getPin();
+      return code === correct;
+    }
+
+    document.querySelectorAll('.pin-key').forEach(key => {
+      key.addEventListener('click', async () => {
+        const val = key.dataset.key;
+        if (val === 'del') {
+          pinCode = pinCode.slice(0, -1);
+        } else if (val && pinCode.length < 4) {
+          pinCode += val;
+        }
+        updateDots();
+        if (pinCode.length === 4) {
+          if (await checkPin(pinCode)) {
+            document.getElementById('pin-screen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            initDashboard();
+          } else {
+            document.getElementById('pin-error').textContent = 'Code incorrect';
+            pinCode = '';
+            updateDots();
+            setTimeout(() => { document.getElementById('pin-error').textContent = ''; }, 1500);
+          }
+        }
+      });
+    });
+
+    function updateDots() {
+      for (let i = 0; i < 4; i++) {
+        document.getElementById('dot' + i).classList.toggle('filled', i < pinCode.length);
+      }
+    }
+
+    function logout() {
+      document.getElementById('dashboard').classList.add('hidden');
+      document.getElementById('pin-screen').classList.remove('hidden');
+      pinCode = '';
+      updateDots();
+    }
+
+    // ─── POI Data ───
     const citiesData = [
       {
         id: 'bilbao', name: 'Bilbao', flag: '🇪🇸',
@@ -585,6 +511,9 @@
 
     function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 9); }
 
+    const TEAM_COLORS = ['#173B7A', '#FF453A', '#30D158', '#FF9F0A', '#AF52DE', '#FF2D55', '#5AC8FA', '#FFD60A'];
+    const TEAM_EMOJIS = ['🐺', '🦁', '🦅', '🐬', '🦊', '🐻', '🐙', '🦋'];
+
     // ─── Dashboard ───
     let activeTab = 'teams';
 
@@ -601,94 +530,136 @@
       const content = document.getElementById('gm-content');
       const tabBar = `<div class="gm-tab-bar">
         <button class="gm-tab ${tab === 'teams' ? 'active' : ''}" onclick="switchTab('teams')">👥 Équipes</button>
+        <button class="gm-tab ${tab === 'progress' ? 'active' : ''}" onclick="switchTab('progress')">🗺️ Progression</button>
         <button class="gm-tab ${tab === 'photos' ? 'active' : ''}" onclick="switchTab('photos')">📸 Photos</button>
-        <button class="gm-tab ${tab === 'achievements' ? 'active' : ''}" onclick="switchTab('achievements')">🏆 Succès</button>
         <button class="gm-tab ${tab === 'stats' ? 'active' : ''}" onclick="switchTab('stats')">📊 Stats</button>
+        <button class="gm-tab ${tab === 'settings' ? 'active' : ''}" onclick="switchTab('settings')">⚙️ Réglages</button>
       </div>`;
 
       if (tab === 'teams') {
         content.innerHTML = tabBar + await renderTeamsTab();
         bindTeamActions();
+      } else if (tab === 'progress') {
+        content.innerHTML = tabBar + await renderProgressTab();
       } else if (tab === 'photos') {
         content.innerHTML = tabBar + await renderPhotosTab();
         bindPhotoActions();
-      } else if (tab === 'achievements') {
-        content.innerHTML = tabBar + await renderAchievementsTab();
       } else if (tab === 'stats') {
         content.innerHTML = tabBar + await renderStatsTab();
+      } else if (tab === 'settings') {
+        content.innerHTML = tabBar + await renderSettingsTab();
+        bindSettingsActions();
       }
     }
 
+    // ─── Teams Tab ───
     async function renderTeamsTab() {
       const teams = await db.getAll('teams');
       const allProgress = await db.getAll('progress');
       const allPhotos = await db.getAll('photos');
 
-      if (teams.length === 0) {
-        return '<div class="gm-empty"><p>Aucune équipe créée</p></div>';
-      }
-
-      return `<div class="gm-section">
+      let html = `<div class="gm-section">
         <div class="gm-section-title">👥 Équipes (${teams.length})</div>
-        ${teams.map(team => {
+        <button class="gm-btn gm-btn-primary gm-btn-full" onclick="showCreateTeamModal()" style="margin-bottom:14px;">+ Créer une équipe</button>`;
+
+      if (teams.length === 0) {
+        html += '<div class="gm-empty"><p>Aucune équipe créée.<br>Commencez par en créer une !</p></div>';
+      } else {
+        for (const team of teams) {
           const teamPhotos = allPhotos.filter(p => p.teamId === team.id);
           const completedSteps = allProgress.filter(p => p.teamId === team.id && p.completed).length;
-          return `<div class="gm-card">
+          const totalPois = getAllPois().length;
+          const pct = totalPois > 0 ? Math.round((completedSteps / totalPois) * 100) : 0;
+
+          html += `<div class="gm-card">
             <div class="gm-team-header">
               <div class="gm-team-avatar" style="background:${team.color || 'var(--accent)'}">${team.emoji || '👥'}</div>
               <div class="gm-team-info">
                 <h3>${team.name}</h3>
-                <p>${(team.members || []).length} membres · ${teamPhotos.length} photos · ${completedSteps} étapes</p>
+                <p>${(team.members || []).length} membres · ${teamPhotos.length} photos · ${completedSteps}/${totalPois} lieux (${pct}%)</p>
               </div>
               <div class="gm-team-score">${team.score || 0}</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);border-radius:6px;height:6px;margin-bottom:10px;overflow:hidden;">
+              <div style="background:linear-gradient(90deg,var(--accent),var(--success));height:100%;width:${pct}%;border-radius:6px;transition:width 0.3s;"></div>
             </div>
             <div class="gm-team-actions">
               <button class="gm-btn gm-btn-primary" data-action="add-points" data-team="${team.id}">+ Points</button>
               <button class="gm-btn gm-btn-success" data-action="force-validate" data-team="${team.id}">✓ Valider POI</button>
+              <button class="gm-btn gm-btn-warning" data-action="edit-team" data-team="${team.id}">✏️ Éditer</button>
               <button class="gm-btn gm-btn-danger" data-action="reset-team" data-team="${team.id}">↺ Reset</button>
             </div>
           </div>`;
-        }).join('')}
-      </div>`;
+        }
+      }
+      html += '</div>';
+      return html;
     }
 
+    // ─── Progress Tab ───
+    async function renderProgressTab() {
+      const teams = await db.getAll('teams');
+      const allProgress = await db.getAll('progress');
+      const allPois = getAllPois();
+
+      if (teams.length === 0) {
+        return '<div class="gm-empty"><p>Créez d\'abord une équipe</p></div>';
+      }
+
+      let html = '<div class="gm-section"><div class="gm-section-title">🗺️ Progression par ville</div>';
+
+      for (const city of citiesData) {
+        const cityPois = allPois.filter(p => p.cityId === city.id);
+        html += `<div class="gm-card" style="margin-bottom:16px;">
+          <h3 style="margin-bottom:12px;">${city.flag} ${city.name} (${cityPois.length} lieux)</h3>`;
+
+        for (const team of teams) {
+          const teamProgress = allProgress.filter(p => p.teamId === team.id && p.city === city.id && p.completed);
+          const completedIds = new Set(teamProgress.map(p => p.poiId));
+          const pct = cityPois.length > 0 ? Math.round((completedIds.size / cityPois.length) * 100) : 0;
+
+          html += `<div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:13px;">${team.emoji} ${team.name}</span>
+              <span class="gm-badge gm-badge-info">${completedIds.size}/${cityPois.length} · ${pct}%</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);border-radius:6px;height:6px;overflow:hidden;">
+              <div style="background:linear-gradient(90deg,${team.color || 'var(--accent)'},var(--success));height:100%;width:${pct}%;border-radius:6px;transition:width 0.3s;"></div>
+            </div>
+          </div>`;
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    // ─── Photos Tab ───
     async function renderPhotosTab() {
       const photos = await db.getAll('photos');
+      const teams = await db.getAll('teams');
       if (photos.length === 0) {
         return '<div class="gm-empty"><p>Aucune photo</p></div>';
       }
       const sorted = [...photos].sort((a, b) => (b.score || 0) - (a.score || 0));
+      const teamMap = {};
+      teams.forEach(t => teamMap[t.id] = t);
+
       return `<div class="gm-section">
         <div class="gm-section-title">📸 Photos (${photos.length})</div>
         <div class="gm-photo-grid">
-          ${sorted.map(p => `<div class="gm-photo-item" data-photo="${p.id}" data-action="delete-photo">
-            <img src="${p.dataUrl || p.imageUrl || ''}" alt="Photo" onerror="this.parentElement.style.display='none'">
-            <div class="gm-photo-score">${p.score || 0} pts</div>
-          </div>`).join('')}
+          ${sorted.map(p => {
+            const team = teamMap[p.teamId];
+            return `<div class="gm-photo-item" data-photo="${p.id}" data-action="delete-photo" title="${team ? team.name : 'Inconnu'} — ${p.poiId || ''} — ${p.score || 0}pts">
+              <img src="${p.dataUrl || p.imageUrl || ''}" alt="Photo" onerror="this.parentElement.style.display='none'">
+              <div class="gm-photo-score">${team ? team.emoji : ''} ${p.score || 0} pts</div>
+            </div>`;
+          }).join('')}
         </div>
       </div>`;
     }
 
-    async function renderAchievementsTab() {
-      const achievements = await db.getAll('achievements');
-      if (achievements.length === 0) {
-        return '<div class="gm-empty"><p>Aucun succès enregistré</p></div>';
-      }
-      return `<div class="gm-section">
-        <div class="gm-section-title">🏆 Succès (${achievements.length})</div>
-        <div class="gm-card">
-          ${achievements.map(a => `<div class="gm-ach-card">
-            <div class="gm-ach-icon" style="background:${a.unlocked ? 'rgba(48,209,88,0.15)' : 'rgba(255,255,255,0.05)'}">${a.icon || '🏆'}</div>
-            <div class="gm-ach-info">
-              <h4>${a.name || a.id}</h4>
-              <p>${a.description || ''}</p>
-            </div>
-            <div class="gm-ach-status ${a.unlocked ? 'done' : 'pending'}">${a.unlocked ? '✓ Débloqué' : '🔒 Verrouillé'}</div>
-          </div>`).join('')}
-        </div>
-      </div>`;
-    }
-
+    // ─── Stats Tab ───
     async function renderStatsTab() {
       const teams = await db.getAll('teams');
       const photos = await db.getAll('photos');
@@ -724,6 +695,57 @@
             <div class="gm-stat-label">Score moyen</div>
           </div>
         </div>
+      </div>
+
+      <div class="gm-section">
+        <div class="gm-section-title">📈 Classement</div>
+        ${teams.length === 0 ? '<div class="gm-empty"><p>Aucune équipe</p></div>' :
+          teams.sort((a, b) => (b.score || 0) - (a.score || 0)).map((t, i) => `
+            <div class="gm-card" style="display:flex;align-items:center;gap:12px;">
+              <div style="font-size:20px;font-weight:800;width:30px;text-align:center;color:${i === 0 ? '#FFD60A' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : 'var(--text-tertiary)'}">#${i + 1}</div>
+              <div class="gm-team-avatar" style="background:${t.color || 'var(--accent)'};width:36px;height:36px;border-radius:10px;">${t.emoji || '👥'}</div>
+              <div style="flex:1;"><strong>${t.name}</strong></div>
+              <div class="gm-team-score" style="font-size:18px;">${t.score || 0}</div>
+            </div>
+          `).join('')}
+      </div>`;
+    }
+
+    // ─── Settings Tab ───
+    async function renderSettingsTab() {
+      const currentPin = await getPin();
+      return `<div class="gm-section">
+        <div class="gm-section-title">⚙️ Réglages</div>
+
+        <div class="gm-card">
+          <h3 style="margin-bottom:12px;">🔐 Changer le code PIN</h3>
+          <div class="gm-form-group">
+            <label class="gm-label">PIN actuel</label>
+            <input class="gm-input" type="password" id="current-pin" maxlength="4" placeholder="****" inputmode="numeric">
+          </div>
+          <div class="gm-form-group">
+            <label class="gm-label">Nouveau PIN (4 chiffres)</label>
+            <input class="gm-input" type="password" id="new-pin" maxlength="4" placeholder="****" inputmode="numeric">
+          </div>
+          <div class="gm-form-group">
+            <label class="gm-label">Confirmer le nouveau PIN</label>
+            <input class="gm-input" type="password" id="confirm-pin" maxlength="4" placeholder="****" inputmode="numeric">
+          </div>
+          <div id="pin-msg" style="font-size:13px;min-height:20px;margin-top:8px;"></div>
+          <button class="gm-btn gm-btn-primary gm-btn-full" onclick="changePin()">Changer le PIN</button>
+        </div>
+
+        <div class="gm-card" style="margin-top:12px;">
+          <h3 style="margin-bottom:12px;">🗑️ Données</h3>
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">Réinitialiser toutes les données de l'application (équipes, photos, progression, succès).</p>
+          <button class="gm-btn gm-btn-danger gm-btn-full" onclick="resetAllData()">⚠️ Tout supprimer</button>
+        </div>
+
+        <div class="gm-card" style="margin-top:12px;">
+          <h3 style="margin-bottom:12px;">📤 Exporter les données</h3>
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">Télécharger toutes les données en JSON pour sauvegarde.</p>
+          <button class="gm-btn gm-btn-success gm-btn-full" onclick="exportData()">📥 Exporter JSON</button>
+        </div>
       </div>`;
     }
 
@@ -731,33 +753,29 @@
     function bindTeamActions() {
       document.querySelectorAll('[data-action="add-points"]').forEach(btn => {
         btn.addEventListener('click', async () => {
-          const teamId = btn.dataset.team;
-          const team = await db.get('teams', teamId);
+          const team = await db.get('teams', btn.dataset.team);
           showPointsModal(team);
         });
       });
       document.querySelectorAll('[data-action="force-validate"]').forEach(btn => {
+        btn.addEventListener('click', () => showForceValidateModal(btn.dataset.team));
+      });
+      document.querySelectorAll('[data-action="edit-team"]').forEach(btn => {
         btn.addEventListener('click', async () => {
-          const teamId = btn.dataset.team;
-          showForceValidateModal(teamId);
+          const team = await db.get('teams', btn.dataset.team);
+          showEditTeamModal(team);
         });
       });
       document.querySelectorAll('[data-action="reset-team"]').forEach(btn => {
         btn.addEventListener('click', async () => {
-          const teamId = btn.dataset.team;
-          if (confirm('Supprimer toute progress de cette équipe ?')) {
-            const progress = await db.getAll('progress');
-            const teamProgress = progress.filter(p => p.teamId === teamId);
-            for (const p of teamProgress) {
-              await db.del('progress', p.id);
-            }
-            const team = await db.get('teams', teamId);
-            if (team) {
-              team.score = 0;
-              await db.put('teams', team);
-            }
-            renderTab('teams');
+          if (!confirm('Supprimer toute la progression de cette équipe ?')) return;
+          const progress = await db.getAll('progress');
+          for (const p of progress.filter(p => p.teamId === btn.dataset.team)) {
+            await db.del('progress', p.id);
           }
+          const team = await db.get('teams', btn.dataset.team);
+          if (team) { team.score = 0; await db.put('teams', team); }
+          renderTab('teams');
         });
       });
     }
@@ -765,12 +783,146 @@
     function bindPhotoActions() {
       document.querySelectorAll('[data-action="delete-photo"]').forEach(item => {
         item.addEventListener('click', async () => {
-          const photoId = item.dataset.photo;
           if (confirm('Supprimer cette photo ?')) {
-            await db.del('photos', photoId);
+            await db.del('photos', item.dataset.photo);
             renderTab('photos');
           }
         });
+      });
+    }
+
+    function showCreateTeamModal() {
+      const overlay = document.createElement('div');
+      overlay.className = 'gm-modal-overlay';
+      const colorIdx = Math.floor(Math.random() * TEAM_COLORS.length);
+      overlay.innerHTML = `<div class="gm-modal">
+        <h2>Créer une équipe</h2>
+        <div class="gm-form-group">
+          <label class="gm-label">Nom de l'équipe</label>
+          <input class="gm-input" type="text" id="team-name" placeholder="Les Aventuriers" maxlength="24">
+        </div>
+        <div class="gm-form-group">
+          <label class="gm-label">Émoji</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;" id="emoji-picker">
+            ${TEAM_EMOJIS.map((e, i) => `<button class="gm-btn gm-btn-emoji" data-emoji="${e}" style="font-size:20px;width:40px;height:40px;padding:0;${i === 0 ? 'border-color:var(--accent);background:rgba(23,59,122,0.3);' : ''}">${e}</button>`).join('')}
+          </div>
+        </div>
+        <div class="gm-form-group">
+          <label class="gm-label">Couleur</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;" id="color-picker">
+            ${TEAM_COLORS.map((c, i) => `<button class="gm-btn-color" data-color="${c}" style="width:32px;height:32px;border-radius:50%;border:2px solid ${i === 0 ? '#fff' : 'transparent'};background:${c};cursor:pointer;"></button>`).join('')}
+          </div>
+        </div>
+        <div class="gm-form-group">
+          <label class="gm-label">Membres (séparés par virgule)</label>
+          <input class="gm-input" type="text" id="team-members" placeholder="Lucas, Maria, Paul">
+        </div>
+        <div class="gm-modal-actions">
+          <button class="gm-btn" onclick="this.closest('.gm-modal-overlay').remove()">Annuler</button>
+          <button class="gm-btn gm-btn-primary" id="confirm-create">Créer</button>
+        </div>
+      </div>`;
+      document.body.appendChild(overlay);
+
+      let selectedEmoji = TEAM_EMOJIS[0];
+      let selectedColor = TEAM_COLORS[0];
+
+      overlay.querySelectorAll('[data-emoji]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          overlay.querySelectorAll('[data-emoji]').forEach(b => b.style.borderColor = 'transparent');
+          btn.style.borderColor = 'var(--accent)';
+          selectedEmoji = btn.dataset.emoji;
+        });
+      });
+      overlay.querySelectorAll('[data-color]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          overlay.querySelectorAll('[data-color]').forEach(b => b.style.borderColor = 'transparent');
+          btn.style.borderColor = '#fff';
+          selectedColor = btn.dataset.color;
+        });
+      });
+
+      document.getElementById('confirm-create').addEventListener('click', async () => {
+        const name = document.getElementById('team-name').value.trim();
+        if (!name) return;
+        const members = document.getElementById('team-members').value.split(',').map(m => m.trim()).filter(Boolean);
+        await db.put('teams', {
+          id: genId(),
+          name,
+          emoji: selectedEmoji,
+          color: selectedColor,
+          members,
+          score: 0,
+          createdAt: Date.now()
+        });
+        overlay.remove();
+        renderTab('teams');
+      });
+    }
+
+    function showEditTeamModal(team) {
+      const overlay = document.createElement('div');
+      overlay.className = 'gm-modal-overlay';
+      overlay.innerHTML = `<div class="gm-modal">
+        <h2>Éditer "${team.name}"</h2>
+        <div class="gm-form-group">
+          <label class="gm-label">Nom</label>
+          <input class="gm-input" type="text" id="edit-team-name" value="${team.name}" maxlength="24">
+        </div>
+        <div class="gm-form-group">
+          <label class="gm-label">Émoji</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;" id="emoji-picker">
+            ${TEAM_EMOJIS.map(e => `<button class="gm-btn" data-emoji="${e}" style="font-size:20px;width:40px;height:40px;padding:0;${e === team.emoji ? 'border-color:var(--accent);background:rgba(23,59,122,0.3);' : ''}">${e}</button>`).join('')}
+          </div>
+        </div>
+        <div class="gm-form-group">
+          <label class="gm-label">Couleur</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;" id="color-picker">
+            ${TEAM_COLORS.map(c => `<button class="gm-btn-color" data-color="${c}" style="width:32px;height:32px;border-radius:50%;border:2px solid ${c === team.color ? '#fff' : 'transparent'};background:${c};cursor:pointer;"></button>`).join('')}
+          </div>
+        </div>
+        <div class="gm-form-group">
+          <label class="gm-label">Membres</label>
+          <input class="gm-input" type="text" id="edit-team-members" value="${(team.members || []).join(', ')}">
+        </div>
+        <div class="gm-form-group">
+          <label class="gm-label">Points</label>
+          <input class="gm-input" type="number" id="edit-team-score" value="${team.score || 0}" min="0">
+        </div>
+        <div class="gm-modal-actions">
+          <button class="gm-btn" onclick="this.closest('.gm-modal-overlay').remove()">Annuler</button>
+          <button class="gm-btn gm-btn-primary" id="confirm-edit">Sauver</button>
+        </div>
+      </div>`;
+      document.body.appendChild(overlay);
+
+      let selectedEmoji = team.emoji;
+      let selectedColor = team.color;
+
+      overlay.querySelectorAll('[data-emoji]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          overlay.querySelectorAll('[data-emoji]').forEach(b => { b.style.borderColor = 'transparent'; b.style.background = 'transparent'; });
+          btn.style.borderColor = 'var(--accent)'; btn.style.background = 'rgba(23,59,122,0.3)';
+          selectedEmoji = btn.dataset.emoji;
+        });
+      });
+      overlay.querySelectorAll('[data-color]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          overlay.querySelectorAll('[data-color]').forEach(b => b.style.borderColor = 'transparent');
+          btn.style.borderColor = '#fff';
+          selectedColor = btn.dataset.color;
+        });
+      });
+
+      document.getElementById('confirm-edit').addEventListener('click', async () => {
+        team.name = document.getElementById('edit-team-name').value.trim() || team.name;
+        team.emoji = selectedEmoji;
+        team.color = selectedColor;
+        team.members = document.getElementById('edit-team-members').value.split(',').map(m => m.trim()).filter(Boolean);
+        team.score = parseInt(document.getElementById('edit-team-score').value) || 0;
+        await db.put('teams', team);
+        overlay.remove();
+        renderTab('teams');
       });
     }
 
@@ -779,8 +931,11 @@
       overlay.className = 'gm-modal-overlay';
       overlay.innerHTML = `<div class="gm-modal">
         <h2>Ajouter des points</h2>
-        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">${team.name}</p>
-        <input class="gm-input" type="number" id="points-input" placeholder="Nombre de points" min="1" value="100">
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">${team.emoji} ${team.name} — Score actuel : ${team.score || 0}</p>
+        <div class="gm-form-group">
+          <label class="gm-label">Points à ajouter</label>
+          <input class="gm-input" type="number" id="points-input" placeholder="100" min="1" value="100">
+        </div>
         <div class="gm-modal-actions">
           <button class="gm-btn" onclick="this.closest('.gm-modal-overlay').remove()">Annuler</button>
           <button class="gm-btn gm-btn-primary" id="confirm-points">Ajouter</button>
@@ -804,10 +959,13 @@
       overlay.className = 'gm-modal-overlay';
       overlay.innerHTML = `<div class="gm-modal">
         <h2>Valider un POI</h2>
-        <select class="gm-select" id="poi-select">
-          <option value="">-- Choisir un POI --</option>
-          ${allPois.map(p => `<option value="${p.id}">${p.cityFlag} ${p.name} (${p.catInfo?.icon || ''} ${p.catInfo?.label || p.category})</option>`).join('')}
-        </select>
+        <div class="gm-form-group">
+          <label class="gm-label">Choisir un lieu</label>
+          <select class="gm-select" id="poi-select">
+            <option value="">-- Choisir un POI --</option>
+            ${allPois.map(p => `<option value="${p.id}">${p.cityFlag} ${p.name} (${p.catInfo?.icon || ''} ${p.catInfo?.label || p.category})</option>`).join('')}
+          </select>
+        </div>
         <div class="gm-modal-actions">
           <button class="gm-btn" onclick="this.closest('.gm-modal-overlay').remove()">Annuler</button>
           <button class="gm-btn gm-btn-success" id="confirm-validate">Valider</button>
@@ -824,24 +982,87 @@
           prog.completedAt = Date.now();
         } else {
           const cityPoi = allPois.find(p => p.id === poiId);
-          prog = {
-            id: genId(),
-            teamId,
-            poiId,
-            city: cityPoi?.cityId || 'unknown',
-            routeId: '',
-            completed: true,
-            completedAt: Date.now()
-          };
+          prog = { id: genId(), teamId, poiId, city: cityPoi?.cityId || 'unknown', routeId: '', completed: true, completedAt: Date.now() };
         }
         await db.put('progress', prog);
+
+        const team = await db.get('teams', teamId);
+        if (team) {
+          team.score = (team.score || 0) + 50;
+          await db.put('teams', team);
+        }
+
         overlay.remove();
         renderTab('teams');
       });
     }
 
+    // ─── Settings Actions ───
+    function bindSettingsActions() {}
+
+    async function changePin() {
+      const current = document.getElementById('current-pin').value;
+      const newPin = document.getElementById('new-pin').value;
+      const confirm = document.getElementById('confirm-pin').value;
+      const msg = document.getElementById('pin-msg');
+
+      if (current !== await getPin()) {
+        msg.innerHTML = '<span style="color:var(--danger);">PIN actuel incorrect</span>';
+        return;
+      }
+      if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+        msg.innerHTML = '<span style="color:var(--danger);">Le PIN doit faire 4 chiffres</span>';
+        return;
+      }
+      if (newPin !== confirm) {
+        msg.innerHTML = '<span style="color:var(--danger);">Les PINs ne correspondent pas</span>';
+        return;
+      }
+
+      await db.setSetting('gm_pin', newPin);
+      msg.innerHTML = '<span style="color:var(--success);">✓ PIN changé avec succès !</span>';
+      document.getElementById('current-pin').value = '';
+      document.getElementById('new-pin').value = '';
+      document.getElementById('confirm-pin').value = '';
+      setTimeout(() => { msg.innerHTML = ''; }, 3000);
+    }
+
+    async function resetAllData() {
+      if (!confirm('⚠️ Supprimer TOUTES les données ? Cette action est irréversible.')) return;
+      if (!confirm('Vraiment tout supprimer ?')) return;
+
+      const stores = ['teams', 'photos', 'progress', 'challenges', 'history', 'achievements'];
+      for (const store of stores) {
+        const items = await db.getAll(store);
+        for (const item of items) {
+          await db.del(store, item.id);
+        }
+      }
+      renderTab('settings');
+    }
+
+    async function exportData() {
+      const data = {};
+      const stores = ['teams', 'photos', 'progress', 'challenges', 'history', 'achievements', 'settings'];
+      for (const store of stores) {
+        data[store] = await db.getAll(store);
+      }
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `photomap-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
     // Expose for inline onclick
     window.switchTab = switchTab;
+    window.showCreateTeamModal = showCreateTeamModal;
+    window.changePin = changePin;
+    window.resetAllData = resetAllData;
+    window.exportData = exportData;
+    window.logout = logout;
   </script>
 </body>
 </html>
