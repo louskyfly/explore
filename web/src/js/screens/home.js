@@ -1,6 +1,6 @@
 import { db } from '../db.js';
 import { getCurrentProfile } from './profileSelect.js';
-import { updateHeader, formatDate, timeAgo, getStatusById, getTagColor, STATUSES, showModal } from '../components.js';
+import { updateHeader, formatDate, getStatusById, getTagColor, STATUSES } from '../components.js';
 
 export async function renderHome(container) {
   const profile = getCurrentProfile();
@@ -29,7 +29,7 @@ export async function renderHome(container) {
           </button>
         `).join('')}
       </div>
-      <div id="activities-list" class="activities-grid"></div>
+      <div id="activities-list"></div>
       <button class="fab" id="fab-add" aria-label="Ajouter">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
@@ -39,10 +39,8 @@ export async function renderHome(container) {
   let currentFilter = 'all';
   let searchQuery = '';
 
-  function renderList() {
-    const list = container.querySelector('#activities-list');
+  function getFiltered() {
     let filtered = activities;
-
     if (currentFilter !== 'all') {
       filtered = filtered.filter(a => (a.tags || []).includes(currentFilter));
     }
@@ -55,6 +53,36 @@ export async function renderHome(container) {
         (a.locationName || '').toLowerCase().includes(q)
       );
     }
+    return filtered;
+  }
+
+  function cardHtml(a) {
+    const firstTag = (a.tags || [])[0] || null;
+    const tagColor = firstTag ? getTagColor(firstTag) : 'var(--accent)';
+    if (a.image) {
+      return `
+        <div class="activity-card" data-id="${a.id}">
+          <div class="activity-card-image"><img src="${a.image}" alt="${a.title}" loading="lazy"></div>
+          <div class="activity-card-body">
+            <div class="activity-card-title">${a.title}</div>
+            ${firstTag ? `<span class="activity-card-tag" style="background:${tagColor}22;color:${tagColor}">${firstTag}</span>` : ''}
+          </div>
+        </div>
+      `;
+    }
+    return `
+      <div class="activity-card no-image" data-id="${a.id}" style="background:${tagColor}11;border-color:${tagColor}33">
+        <div class="activity-card-body">
+          <div class="activity-card-title">${a.title}</div>
+          ${firstTag ? `<span class="activity-card-tag" style="background:${tagColor}22;color:${tagColor}">${firstTag}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderList() {
+    const list = container.querySelector('#activities-list');
+    const filtered = getFiltered();
 
     if (filtered.length === 0) {
       list.innerHTML = `<div class="empty-state">
@@ -65,24 +93,31 @@ export async function renderHome(container) {
       return;
     }
 
-    list.innerHTML = filtered.map(a => {
-      const status = getStatusById(a.status);
-      const tagsHtml = (a.tags || []).map(t => `<span class="tag-dot" style="background:${getTagColor(t)}" title="${t}"></span>`).join('');
-      return `
-        <div class="activity-card" data-id="${a.id}">
-          ${a.image ? `<div class="activity-card-image"><img src="${a.image}" alt="${a.title}" loading="lazy"></div>` : ''}
-          <div class="activity-card-body">
-            <h3 class="activity-card-title">${a.title}</h3>
-            ${a.date ? `<span class="activity-card-date">${formatDate(new Date(a.date).getTime())}</span>` : ''}
-            <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
-              <span class="status-badge ${status.cssClass}">${status.icon} ${status.label}</span>
-              <div class="tag-dots">${tagsHtml}</div>
+    if (currentFilter !== 'all') {
+      list.innerHTML = `<div class="activities-grid">${filtered.map(cardHtml).join('')}</div>`;
+    } else {
+      const groups = {};
+      filtered.forEach(a => {
+        const tag = (a.tags || [])[0] || 'Sans tag';
+        if (!groups[tag]) groups[tag] = [];
+        groups[tag].push(a);
+      });
+
+      const order = [...new Set(filtered.flatMap(a => (a.tags || [])[0] || 'Sans tag'))];
+      list.innerHTML = order.map(tag => {
+        const items = groups[tag];
+        const color = getTagColor(tag);
+        return `
+          <div class="tag-section">
+            <div class="tag-section-header">
+              <div class="tag-section-dot" style="background:${color}"></div>
+              <div class="tag-section-title">${tag}</div>
             </div>
-            ${a.locationName ? `<span class="activity-card-location">\uD83D\uDCCD ${a.locationName}</span>` : ''}
+            <div class="activities-grid">${items.map(cardHtml).join('')}</div>
           </div>
-        </div>
-      `;
-    }).join('');
+        `;
+      }).join('');
+    }
 
     list.querySelectorAll('.activity-card').forEach(card => {
       card.addEventListener('click', () => {

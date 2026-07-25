@@ -47,11 +47,15 @@ export async function renderCreateActivity(container, editingId) {
             ${imageData ? `<img src="${imageData}" alt="Photo">` : ''}
             <div class="image-picker-content">
               <span class="image-picker-icon">\uD83D\uDCF7</span>
-              <span class="image-picker-text">Ajouter une photo</span>
+              <span class="image-picker-text">Appuie pour ajouter une photo</span>
             </div>
             ${imageData ? '<button type="button" class="image-picker-remove" id="remove-image">\u2715</button>' : ''}
           </div>
           <input type="file" id="image-input" accept="image/*" style="display:none">
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <input class="input" type="url" id="image-url-input" placeholder="Ou colle une URL d'image..." style="flex:1">
+            <button type="button" class="btn btn-secondary" id="btn-load-url">Charger</button>
+          </div>
         </div>
 
         <div class="input-group">
@@ -248,10 +252,43 @@ export async function renderCreateActivity(container, editingId) {
       imagePicker.classList.remove('has-image');
       imagePicker.innerHTML = `
         <span class="image-picker-icon">\uD83D\uDCF7</span>
-        <span class="image-picker-text">Ajouter une photo</span>
+        <span class="image-picker-text">Appuie pour ajouter une photo</span>
       `;
     });
   }
+
+  container.querySelector('#btn-load-url').addEventListener('click', async () => {
+    const url = container.querySelector('#image-url-input').value.trim();
+    if (!url) return showToast('Colle une URL', 'error');
+    try {
+      showToast('Chargement...', 'info');
+      const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=1200&h=1200&fit=cover&output=jpg&q=80`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error('Fetch failed');
+      const blob = await response.blob();
+      const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+      imageData = await compressImage(file, 1200, 0.8);
+      imagePicker.classList.add('has-image');
+      imagePicker.innerHTML = `
+        <img src="${imageData}" alt="Photo">
+        <button type="button" class="image-picker-remove" id="remove-image">\u2715</button>
+      `;
+      container.querySelector('#remove-image').addEventListener('click', (e) => {
+        e.stopPropagation();
+        imageData = '';
+        imagePicker.classList.remove('has-image');
+        imagePicker.innerHTML = `
+          <span class="image-picker-icon">\uD83D\uDCF7</span>
+          <span class="image-picker-text">Appuie pour ajouter une photo</span>
+        `;
+      });
+      container.querySelector('#image-url-input').value = '';
+      showToast('Image chargee', 'success');
+    } catch (err) {
+      console.error('URL load error:', err);
+      showToast('Impossible de charger l\'image', 'error');
+    }
+  });
 
   container.querySelectorAll('.status-selector-btn').forEach(btn => {
     btn.addEventListener('click', () => {
