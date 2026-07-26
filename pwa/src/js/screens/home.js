@@ -93,7 +93,12 @@ export async function renderHome(container) {
   container.querySelectorAll('.quick-action').forEach(btn => {
     btn.addEventListener('click', () => {
       const action = btn.dataset.action;
-      document.querySelector(`[data-tab="${action}"]`)?.click();
+      const tabBtn = document.querySelector(`[data-tab="${action}"]`);
+      if (tabBtn) {
+        tabBtn.click();
+      } else {
+        import('../router.js').then(m => m.router.navigate(action));
+      }
     });
   });
 
