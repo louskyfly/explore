@@ -59,6 +59,7 @@ export async function renderHome(container) {
   function cardHtml(a) {
     const firstTag = (a.tags || [])[0] || null;
     const tagColor = firstTag ? getTagColor(firstTag) : 'var(--accent)';
+    const status = getStatusById(a.status);
     if (a.image) {
       return `
         <div class="activity-card" data-id="${a.id}">
@@ -66,15 +67,18 @@ export async function renderHome(container) {
           <div class="activity-card-body">
             <div class="activity-card-title">${a.title}</div>
             ${firstTag ? `<span class="activity-card-tag" style="background:${tagColor}22;color:${tagColor}">${firstTag}</span>` : ''}
+            <div class="activity-card-location">${status.icon} ${a.locationName || status.label}</div>
           </div>
         </div>
       `;
     }
     return `
-      <div class="activity-card no-image" data-id="${a.id}" style="background:${tagColor}11;border-color:${tagColor}33">
+      <div class="activity-card no-image" data-id="${a.id}">
+        <div class="activity-card-image" style="background:${tagColor}"></div>
         <div class="activity-card-body">
           <div class="activity-card-title">${a.title}</div>
           ${firstTag ? `<span class="activity-card-tag" style="background:${tagColor}22;color:${tagColor}">${firstTag}</span>` : ''}
+          <div class="activity-card-location">${status.icon} ${a.locationName || status.label}</div>
         </div>
       </div>
     `;
