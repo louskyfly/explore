@@ -498,7 +498,7 @@
             '<button class="gm-btn gm-btn-primary" data-action="add-points" data-team="' + team.id + '">+ Points</button>' +
             '<button class="gm-btn gm-btn-success" data-action="force-validate" data-team="' + team.id + '">✓ Valider POI</button>' +
             '<button class="gm-btn gm-btn-warning" data-action="edit-team" data-team="' + team.id + '">✏️ Éditer</button>' +
-            '<button class="gm-btn gm-btn-danger" data-action="reset-team" data-team="' + team.id + '">↺ Reset</button>' +
+            '<button class="gm-btn gm-btn-danger" data-action="delete-team" data-team="' + team.id + '">🗑️ Supprimer</button>' +
             '</div>' +
             '<div style="margin-top:10px;padding:10px;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);border-radius:10px;">' +
             '<p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;">🔗 Lien d\'invitation pour les joueurs :</p>' +
@@ -624,16 +624,10 @@
           if (team) showEditTeamModal(team);
         });
       });
-      document.querySelectorAll('[data-action="reset-team"]').forEach(btn => {
+      document.querySelectorAll('[data-action="delete-team"]').forEach(btn => {
         btn.addEventListener('click', async () => {
-          if (!confirm('Supprimer toute la progression de cette équipe ?')) return;
-          const progress = await dbGetAll('progress').catch(() => []);
-          for (const p of progress.filter(p => p.teamId === btn.dataset.team)) {
-            await dbDel('progress', p.id).catch(() => {});
-          }
           const team = await dbGet('teams', btn.dataset.team);
-          if (team) { team.score = 0; await dbPut('teams', team); }
-          renderTab('teams');
+          if (team) showDeleteTeamModal(team);
         });
       });
       document.querySelectorAll('[data-action="copy-link"]').forEach(btn => {
@@ -742,6 +736,52 @@
         team.members = document.getElementById('edit-members').value.split(',').map(m => m.trim()).filter(Boolean);
         team.score = parseInt(document.getElementById('edit-score').value) || 0;
         await dbPut('teams', team); overlay.remove(); renderTab('teams');
+      });
+    }
+
+    function showDeleteTeamModal(team) {
+      const overlay = showModal(
+        '<h2>🗑️ Supprimer l\'équipe</h2>' +
+        '<p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">Vous êtes sur le point de supprimer :</p>' +
+        '<div class="gm-card" style="margin:12px 0;">' +
+        '<div class="gm-team-header"><div class="gm-team-avatar" style="background:' + (team.color||'var(--accent)') + '">' + (team.emoji||'👥') + '</div>' +
+        '<div class="gm-team-info"><h3>' + team.name + '</h3><p>' + (team.members||[]).length + ' membres · ' + (team.score||0) + ' pts</p></div></div></div>' +
+        '<p style="font-size:13px;color:var(--danger);margin-bottom:4px;">⚠️ Cette action est irréversible :</p>' +
+        '<ul style="font-size:13px;color:var(--text-secondary);margin:0 0 8px 16px;">' +
+        '<li>Toute la progression sera supprimée</li>' +
+        '<li>Toutes les photos seront supprimées</li>' +
+        '<li>L\'équipe sera définitivement supprimée</li></ul>' +
+        '<div class="gm-form-group"><label class="gm-label">Tapez le nom de l\'équipe pour confirmer</label>' +
+        '<input class="gm-input" type="text" id="delete-confirm-name" placeholder="' + team.name + '"></div>' +
+        '<div class="gm-modal-actions">' +
+        '<button class="gm-btn" onclick="this.closest(\'.gm-modal-overlay\').remove()">Annuler</button>' +
+        '<button class="gm-btn gm-btn-danger" id="confirm-delete-team" disabled>🗑️ Supprimer</button></div>'
+      );
+
+      const nameInput = document.getElementById('delete-confirm-name');
+      const confirmBtn = document.getElementById('confirm-delete-team');
+      nameInput.addEventListener('input', () => {
+        confirmBtn.disabled = nameInput.value.trim() !== team.name;
+      });
+
+      confirmBtn.addEventListener('click', async () => {
+        if (nameInput.value.trim() !== team.name) return;
+        confirmBtn.textContent = 'Suppression...';
+        confirmBtn.disabled = true;
+
+        const progress = await dbGetAll('progress').catch(() => []);
+        for (const p of progress.filter(p => p.teamId === team.id)) {
+          await dbDel('progress', p.id).catch(() => {});
+        }
+
+        const photos = await dbGetAll('photos').catch(() => []);
+        for (const p of photos.filter(p => p.teamId === team.id)) {
+          await dbDel('photos', p.id).catch(() => {});
+        }
+
+        await dbDel('teams', team.id).catch(() => {});
+        overlay.remove();
+        renderTab('teams');
       });
     }
 
