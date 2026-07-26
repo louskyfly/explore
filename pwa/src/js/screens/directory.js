@@ -8,6 +8,7 @@ const cities = [bilbao, zaragoza];
 let selectedCity = 'bilbao';
 let selectedCategory = 'all';
 let sortBy = 'alpha';
+let searchQuery = '';
 let userPosition = null;
 
 function getCurrentCity() {
@@ -19,6 +20,10 @@ function getFilteredPois() {
   let pois = city.pois.map(p => ({ ...p, catInfo: city.categories[p.category] }));
   if (selectedCategory !== 'all') {
     pois = pois.filter(p => p.category === selectedCategory);
+  }
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase().trim();
+    pois = pois.filter(p => p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q) || (p.catInfo?.label || '').toLowerCase().includes(q));
   }
   if (sortBy === 'alpha') {
     pois.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
@@ -89,6 +94,12 @@ function buildHTML(allProgress, allPhotos) {
       ${cities.map(c => `<button class="city-tab ${c.id === selectedCity ? 'active' : ''}" data-city-select="${c.id}">${c.flag} ${c.name}</button>`).join('')}
     </div>
 
+    <div style="position:relative;margin-bottom:12px;">
+      <input class="input" type="text" id="dir-search" placeholder="Rechercher un lieu..." value="${searchQuery}" style="width:100%;padding:10px 12px 10px 36px;border-radius:10px;font-size:14px;">
+      <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;">🔍</span>
+      ${searchQuery ? '<button id="dir-search-clear" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-tertiary);font-size:16px;cursor:pointer;padding:4px;">✕</button>' : ''}
+    </div>
+
     <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;scrollbar-width:none" class="dir-chips-scroll">
       <button class="filter-chip ${selectedCategory === 'all' ? 'active' : ''}" data-dir-cat="all">Tous</button>
       ${Object.entries(cats).map(([key, val]) => `<button class="filter-chip ${selectedCategory === key ? 'active' : ''}" data-dir-cat="${key}">${val.icon} ${val.label}</button>`).join('')}
@@ -112,9 +123,10 @@ function buildPoiCards(allProgress, allPhotos) {
   const pois = getFilteredPois();
   const city = getCurrentCity();
   if (pois.length === 0) {
-    return `<div class="empty-state"><div class="empty-state-icon">🔍</div><h3>Aucun lieu</h3><p>Essayez un autre filtre</p></div>`;
+    return `<div class="empty-state"><div class="empty-state-icon">🔍</div><h3>Aucun lieu</h3><p>${searchQuery ? 'Aucun résultat pour "' + searchQuery + '"' : 'Essayez un autre filtre'}</p></div>`;
   }
-  return pois.map(p => {
+  const countHtml = searchQuery || selectedCategory !== 'all' ? `<div style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px;">${pois.length} lieu${pois.length > 1 ? 'x' : ''} trouvé${pois.length > 1 ? 's' : ''}</div>` : '';
+  return countHtml + pois.map(p => {
     const dist = (userPosition && p.lat && p.lng)
       ? `<span style="font-size:11px;color:var(--text-tertiary);">· ${formatDist(getDistance(userPosition.lat, userPosition.lng, p.lat, p.lng))}</span>`
       : '';
@@ -140,6 +152,7 @@ function bindEvents(container, allProgress, allPhotos) {
     btn.addEventListener('click', () => {
       selectedCity = btn.dataset.citySelect;
       selectedCategory = 'all';
+      searchQuery = '';
       renderDirectory(container);
     });
   });
@@ -160,7 +173,39 @@ function bindEvents(container, allProgress, allPhotos) {
     });
   }
 
+  const searchEl = container.querySelector('#dir-search');
+  if (searchEl) {
+    let debounce;
+    searchEl.addEventListener('input', () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        searchQuery = searchEl.value;
+        updateList(container, allProgress, allPhotos);
+        updateClearBtn(container);
+      }, 200);
+    });
+  }
+
+  const clearBtn = container.querySelector('#dir-search-clear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      searchQuery = '';
+      const el = container.querySelector('#dir-search');
+      if (el) el.value = '';
+      updateList(container, allProgress, allPhotos);
+      updateClearBtn(container);
+    });
+  }
+
   bindCardEvents(container, allProgress, allPhotos);
+}
+
+function updateClearBtn(container) {
+  const searchEl = container.querySelector('#dir-search');
+  const clearBtn = container.querySelector('#dir-search-clear');
+  if (searchEl && clearBtn) {
+    clearBtn.style.display = searchEl.value ? '' : 'none';
+  }
 }
 
 function updateChips(container) {

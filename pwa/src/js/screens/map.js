@@ -555,6 +555,39 @@ async function processMapPhoto(photoData, poi, route, resultDiv, scoreDiv) {
     });
 
     document.getElementById('btn-save-photo')?.addEventListener('click', async () => {
+      const teamId = await db.getSetting('currentTeam');
+      let memberName = '';
+      if (teamId) {
+        const team = await db.getTeam(teamId);
+        if (team && team.members && team.members.length > 0) {
+          const member = await new Promise(resolve => {
+            const memberContent = `
+              <div style="padding:4px 0;">
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">Qui a pris cette photo ?</p>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  ${team.members.map(m => `<button class="btn btn-secondary member-pick-btn" style="width:100%;text-align:left;">${m}</button>`).join('')}
+                  <button class="btn btn-secondary member-pick-btn" style="width:100%;text-align:left;color:var(--text-tertiary);">Autre...</button>
+                </div>
+              </div>
+            `;
+            const { close } = showModal('📸 Membre', memberContent, []);
+            document.querySelectorAll('.member-pick-btn').forEach(btn => {
+              btn.addEventListener('click', () => {
+                const val = btn.textContent.trim();
+                if (val === 'Autre...') {
+                  const name = prompt('Nom du membre :');
+                  resolve(name ? name.trim() : '');
+                } else {
+                  resolve(val);
+                }
+                close();
+              });
+            });
+          });
+          memberName = member;
+        }
+      }
+
       const photo = {
         id: genId(),
         data: photoData,
@@ -566,6 +599,7 @@ async function processMapPhoto(photoData, poi, route, resultDiv, scoreDiv) {
         points,
         lat: poi.lat,
         lng: poi.lng,
+        member: memberName,
         timestamp: Date.now()
       };
       await db.addPhoto(photo);
@@ -573,11 +607,11 @@ async function processMapPhoto(photoData, poi, route, resultDiv, scoreDiv) {
         id: genId(),
         type: 'photo_taken',
         title: `Photo de ${poi.name}`,
-        detail: `Score: ${result.score}% — +${points} pts`,
+        detail: `Score: ${result.score}% — +${points} pts${memberName ? ' — ' + memberName : ''}`,
         timestamp: Date.now()
       });
       completedPoiIds.add(poi.id);
-      showToast(`📸 Photo de "${poi.name}" sauvegardée ! +${points} pts`, 'success');
+      showToast(`📸 Photo de "${poi.name}" sauvegardée ! +${points} pts${memberName ? ' (' + memberName + ')' : ''}`, 'success');
       document.querySelector('.modal-close')?.click();
       updateMapMarkers();
     });

@@ -506,10 +506,58 @@
             '<button class="gm-btn gm-btn-success" data-action="copy-link" data-team="' + team.id + '" style="flex:1;">📋 Copier le lien</button>' +
             '<button class="gm-btn" data-action="show-qr" data-team="' + team.id + '">📱 QR</button>' +
             '</div></div>' +
+            '<div style="margin-top:10px;">' +
+            '<button class="gm-btn gm-btn-full" data-action="toggle-members" data-team="' + team.id + '" style="background:rgba(100,210,255,0.08);color:var(--info);border-color:rgba(100,210,255,0.2);">📊 Détails par joueur</button>' +
+            '<div class="gm-member-stats" id="members-' + team.id + '" style="display:none;margin-top:8px;">' +
+            renderMemberStats(team, teamPhotos, allProgress) +
+            '</div></div>' +
             '</div>';
         }
       }
       html += '</div>';
+      return html;
+    }
+
+    function renderMemberStats(team, teamPhotos, allProgress) {
+      const members = team.members || [];
+      if (members.length === 0) {
+        return '<div style="font-size:12px;color:var(--text-tertiary);padding:8px;">Aucun membre dans cette équipe</div>';
+      }
+
+      const memberStats = members.map(name => {
+        const memberPhotos = teamPhotos.filter(p => (p.member || '') === name);
+        const totalScore = memberPhotos.reduce((s, p) => s + (p.score || 0), 0);
+        const totalPoints = memberPhotos.reduce((s, p) => s + (p.points || 0), 0);
+        const avgScore = memberPhotos.length > 0 ? Math.round(totalScore / memberPhotos.length) : 0;
+        return { name, photos: memberPhotos.length, totalPoints, avgScore };
+      });
+
+      memberStats.sort((a, b) => b.totalPoints - a.totalPoints);
+
+      let html = '<div style="display:flex;flex-direction:column;gap:6px;">';
+      memberStats.forEach((m, i) => {
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '　';
+        html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;">' +
+          '<span style="font-size:16px;">' + medal + '</span>' +
+          '<div style="flex:1;">' +
+            '<div style="font-size:13px;font-weight:600;">' + m.name + '</div>' +
+            '<div style="font-size:11px;color:var(--text-secondary);">' + m.photos + ' photo' + (m.photos > 1 ? 's' : '') + ' · ' + m.totalPoints + ' pts</div>' +
+          '</div>' +
+          '<div style="text-align:right;">' +
+            '<div style="font-size:14px;font-weight:700;color:var(--info);">' + m.avgScore + '%</div>' +
+            '<div style="font-size:10px;color:var(--text-tertiary);">fidélité</div>' +
+          '</div>' +
+        '</div>';
+      });
+      html += '</div>';
+
+      const unattributed = teamPhotos.filter(p => !p.member || p.member === '');
+      if (unattributed.length > 0) {
+        html += '<div style="margin-top:8px;padding:8px 10px;background:rgba(255,159,10,0.08);border:1px solid rgba(255,159,10,0.2);border-radius:8px;">' +
+          '<div style="font-size:12px;color:var(--warning);">⚠️ ' + unattributed.length + ' photo' + (unattributed.length > 1 ? 's' : '') + ' non attribuée' + (unattributed.length > 1 ? 's' : '') + '</div>' +
+        '</div>';
+      }
+
       return html;
     }
 
@@ -628,6 +676,16 @@
         btn.addEventListener('click', async () => {
           const team = await dbGet('teams', btn.dataset.team);
           if (team) showDeleteTeamModal(team);
+        });
+      });
+      document.querySelectorAll('[data-action="toggle-members"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const el = document.getElementById('members-' + btn.dataset.team);
+          if (el) {
+            const visible = el.style.display !== 'none';
+            el.style.display = visible ? 'none' : 'block';
+            btn.textContent = visible ? '📊 Détails par joueur' : '✕ Masquer';
+          }
         });
       });
       document.querySelectorAll('[data-action="copy-link"]').forEach(btn => {
